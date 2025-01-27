@@ -1,0 +1,237 @@
+﻿<Window x:Class="BOMVIEW.MissingProductsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Missing Products" 
+        Height="500" 
+        Width="800"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+
+    <Window.Resources>
+        <!-- Style for DataGrid rows with conditional background -->
+        <Style x:Key="MissingProductRowStyle" TargetType="DataGridRow">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding MissingFrom}" Value="All">
+                    <Setter Property="Background" Value="#FFCDD2"/>
+                    <Setter Property="Foreground" Value="#D32F2F"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Link Button Style -->
+        <Style x:Key="LinkButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="3,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Blue"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="TextBlock.TextDecorations" Value="Underline"/>
+                    <Setter Property="Background" Value="#F0F0F0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Primary Button Style -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Button Style -->
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#CCCCCC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Text="Missing Products" 
+                  FontSize="20" 
+                  FontWeight="SemiBold" 
+                  Margin="0,0,0,15"/>
+
+        <!-- DataGrid -->
+        <DataGrid x:Name="MissingProductsGrid"
+          Grid.Row="1"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          RowStyle="{StaticResource MissingProductRowStyle}"
+          CellEditEnding="MissingProductsGrid_CellEditEnding"
+          Background="White"
+          BorderThickness="1"
+          BorderBrush="#DDD"
+          RowHeaderWidth="0"
+          VerticalGridLinesBrush="#E5E7EB"
+          HorizontalGridLinesBrush="#E5E7EB">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Item" 
+                          Binding="{Binding Num}" 
+                          IsReadOnly="True"
+                          Width="60"/>
+                <DataGridTextColumn Header="Original Product Number" 
+                          Binding="{Binding OriginalOrderingCode}"
+                          IsReadOnly="True"
+                          Width="150"/>
+                <DataGridTemplateColumn Header="Links / External" 
+                              Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="DK " 
+                            Click="DigiKeyLink_Click"
+                            Style="{StaticResource LinkButton}"
+                            Margin="0,0,2,0"
+                            ToolTip="Open in DigiKey"/>
+                                <Button Content="MS "
+                            Click="MouserLink_Click"
+                            Style="{StaticResource LinkButton}"
+                            Margin="0,0,2,0"
+                            ToolTip="Open in Mouser"/>
+                                <Button Content="FR "
+                            Click="FarnellLink_Click"
+                            Style="{StaticResource LinkButton}"
+                            Margin="0,0,2,0"
+                            ToolTip="Open in Farnell"/>
+                                <Button Click="ExternalSupplierButton_Click"
+                            Style="{StaticResource LinkButton}"
+                            ToolTip="Add External Supplier"
+                            Padding="3,1"
+                            Margin="2,0,0,0">
+                                    <Button.Background>
+                                        <SolidColorBrush Color="#9333EA" Opacity="0.2"/>
+                                    </Button.Background>
+                                    <Button.Foreground>
+                                        <SolidColorBrush Color="#9333EA"/>
+                                    </Button.Foreground>
+                                    <Grid>
+                                        <TextBlock Text="EXT" FontSize="11" FontWeight="SemiBold"/>
+                                        <Path Data="M6,5C8.21,5 10,6.79 10,9C10,11.21 8.21,13 6,13C3.79,13 2,11.21 2,9C2,6.79 3.79,5 6,5M17,11.5V13H19V14.5H17V16H15.5V14.5H14V13H15.5V11.5H17M6,15C3,15 0,16.79 0,20V21H12V20C12,16.79 9,15 6,15Z"
+                                      Stretch="Uniform" 
+                                      Width="0" 
+                                      Height="0" 
+                                      Margin="0,0,0,0" 
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                      Visibility="Collapsed"/>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="New Product Number" 
+                          Binding="{Binding OrderingCode}" 
+                          Width="150"/>
+                <DataGridTextColumn Header="Designator" 
+                          Binding="{Binding Designator}" 
+                          IsReadOnly="True"
+                          Width="120"/>
+                <DataGridTextColumn Header="Value" 
+                          Binding="{Binding Value}" 
+                          IsReadOnly="True"
+                          Width="100"/>
+                <DataGridTextColumn Header="Missing From" 
+                          Binding="{Binding MissingFrom}" 
+                          IsReadOnly="True"
+                          Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+      
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+            Orientation="Horizontal" 
+            HorizontalAlignment="Right" 
+            Margin="0,15,0,0">
+            <Button x:Name="ExternalSupplierButtonFooter"
+            Click="ExternalSupplierButton_Click"
+            Style="{StaticResource PrimaryButton}"
+            Background="#9333EA"
+            ToolTip="Add External Supplier"
+            Margin="0,0,10,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="External Supplier" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <!-- SVG External User Icon -->
+                    <Path Data="M6,5C8.21,5 10,6.79 10,9C10,11.21 8.21,13 6,13C3.79,13 2,11.21 2,9C2,6.79 3.79,5 6,5M17,11.5V13H19V14.5H17V16H15.5V14.5H14V13H15.5V11.5H17M6,15C3,15 0,16.79 0,20V21H12V20C12,16.79 9,15 6,15Z"
+                  Fill="White"
+                  Width="16"
+                  Height="16"
+                  Stretch="Uniform"
+                  VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="UpdateButton"
+            Content="Update All Visible"
+            Click="UpdateButton_Click"
+            Style="{StaticResource PrimaryButton}"
+            Margin="0,0,10,0"/>
+            <Button Content="Close" 
+            Click="CloseButton_Click"
+            Style="{StaticResource SecondaryButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

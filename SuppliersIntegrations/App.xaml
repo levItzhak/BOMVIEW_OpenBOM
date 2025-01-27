@@ -1,0 +1,21 @@
+﻿<Application x:Class="BOMVIEW.App"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:BOMVIEW"
+             StartupUri="Views/MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+
+            </ResourceDictionary.MergedDictionaries>
+
+            <DropShadowEffect x:Key="DropShadowEffect" 
+                      BlurRadius="10" 
+                      ShadowDepth="1" 
+                      Direction="270" 
+                      Opacity="0.2" 
+                      Color="Black"/>
+            <local:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

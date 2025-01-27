@@ -1,0 +1,84 @@
+﻿<Window x:Class="BOMVIEW.ProductEntryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add/Edit Product" 
+        Height="450" 
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+    <Window.Resources>
+        <!-- Add ModernButton Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Form Fields -->
+        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+            <TextBlock Text="Ordering Code *" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtOrderingCode" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Designator" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtDesignator" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Value" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtValue" Margin="0,0,0,10"/>
+
+            <TextBlock Text="PCB Footprint" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtPcbFootprint" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Quantity (One) *" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtQuantityOne" PreviewTextInput="NumberValidationTextBox" Margin="0,0,0,10"/>
+
+            <TextBlock Text="* Required fields" Foreground="Gray" Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,20,0,0">
+            <Button x:Name="btnCancel"
+                    Content="Cancel" 
+                    Click="btnCancel_Click"
+                    Style="{StaticResource ModernButton}"
+                    Background="#6c757d"
+                    Margin="0,0,10,0"/>
+            <Button x:Name="btnSave"
+                    Content="Save" 
+                    Click="btnSave_Click"
+                    Style="{StaticResource ModernButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

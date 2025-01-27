@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window x:Class="BOMVIEW.BulkUpdateDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Bulk Update from DigiKey" 
+        Height="400" 
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+    <Grid x:Name="MainGrid" Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Bulk Update from DigiKey"
+                     FontSize="24"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,10"/>
+            <TextBlock x:Name="UpdateModeText"
+                     FontSize="16"
+                     Margin="0,0,0,10"/>
+            <TextBlock Text="This process will update product information from DigiKey for all parts that can be found. Parts not found in DigiKey will remain unchanged."
+                     TextWrapping="Wrap"
+                     Margin="0,0,0,10"/>
+            <TextBlock Text="Note: This operation may take a while depending on the number of parts to process."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
+        </StackPanel>
+
+        <!-- Progress Section -->
+        <Border Grid.Row="1" 
+                Background="White"
+                CornerRadius="8"
+                Padding="20"
+                Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="Progress"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Margin="0,0,0,10"/>
+                <ProgressBar x:Name="ProgressBar"
+                           Height="20"
+                           Margin="0,0,0,10"/>
+                <TextBlock x:Name="StatusText"
+                         Text="Ready to start..."
+                         Margin="0,0,0,10"/>
+                <TextBlock x:Name="UpdateCountText"
+                         Text="Processed: 0/0 | Updated: 0 | Failed: 0"
+                         FontFamily="Consolas"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Warning Message -->
+        <Border Grid.Row="2"
+                Background="#FFF3E0"
+                CornerRadius="8"
+                Padding="15"
+                Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="⚠️"
+                         FontSize="20"
+                         Margin="0,0,10,0"
+                         VerticalAlignment="Center"/>
+                <TextBlock Text="Please ensure you have a stable internet connection. The process can be cancelled at any time, but already updated parts will remain updated."
+                         TextWrapping="Wrap"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" 
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button x:Name="CloseButton"
+                    Content="Close"
+                    Width="100"
+                    Height="35"
+                    Margin="0,0,10,0"
+                    Click="CloseButton_Click"/>
+            <Button x:Name="StartButton"
+                    Content="Start Update"
+                    Width="120"
+                    Height="35"
+                    Background="#2196F3"
+                    Foreground="White"
+                    Click="StartButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

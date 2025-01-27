@@ -1,0 +1,69 @@
+﻿<Window x:Class="BOMVIEW.UserGuideWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BOM Price Comparison Guide" 
+        Height="500" 
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header with Language Selection -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,20">
+         
+
+            <StackPanel Orientation="Horizontal" 
+                        DockPanel.Dock="Right">
+                <Button x:Name="btnEnglish"
+                        Content="English"
+                        Click="btnEnglish_Click"
+                        Width="80"
+                        Height="30"
+                        Margin="0,0,10,0"/>
+                <Button x:Name="btnHebrew"
+                        Content="עברית"
+                        Click="btnHebrew_Click"
+                        Width="80"
+                        Height="30"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Navigation Tree -->
+            <Border Background="White" 
+                    CornerRadius="8" 
+                    Margin="0,0,20,0">
+                <TreeView x:Name="NavigationTree"
+                         BorderThickness="0"
+                         SelectedItemChanged="NavigationTree_SelectedItemChanged"/>
+            </Border>
+
+            <!-- Content Area -->
+            <Border Grid.Column="1" 
+                    Background="White" 
+                    CornerRadius="8">
+                <ScrollViewer Padding="20">
+                    <StackPanel x:Name="ContentPanel">
+                        <TextBlock x:Name="ContentTitle"
+                                 FontSize="20"
+                                 FontWeight="SemiBold"
+                                 Margin="0,0,0,20"/>
+                        <TextBlock x:Name="ContentBody"
+                                 TextWrapping="Wrap"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

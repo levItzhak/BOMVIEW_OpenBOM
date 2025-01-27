@@ -1,0 +1,114 @@
+﻿<Window x:Class="BOMVIEW.QuantityDiscrepancyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Quantity Discrepancy" 
+        Height="340" 
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" 
+                   TextWrapping="Wrap" 
+                   Text="Quantity discrepancy detected for the following part:" 
+                   Margin="0,0,0,10"
+                   FontWeight="SemiBold"
+                   FontSize="14"/>
+
+        <Border Grid.Row="1" 
+                BorderBrush="#E5E7EB" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15" 
+                Margin="0,0,0,15"
+                Background="White">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Part Number:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PartNumber}" Margin="0,0,0,5"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Part Description:" FontWeight="SemiBold" Margin="0,5,0,5"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PartDescription}" Margin="0,5,0,5" TextWrapping="Wrap"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="New BOM Quantity:" FontWeight="SemiBold" Margin="0,5,0,5"/>
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,5,0,5">
+                    <TextBlock Text="{Binding NewQuantity}" FontWeight="SemiBold" Foreground="#2196F3"/>
+                    <TextBlock Text=" units" Margin="3,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Existing Quantity:" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,5,0,0">
+                    <TextBlock Text="{Binding ExistingQuantity}" FontWeight="SemiBold" Foreground="#4CAF50"/>
+                    <TextBlock Text=" units" Margin="3,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2" 
+                   Text="How would you like to handle this discrepancy?" 
+                   Margin="0,0,0,10"
+                   FontWeight="SemiBold"/>
+
+        <StackPanel Grid.Row="3" Margin="0,0,0,20">
+            <RadioButton x:Name="rbSkip" 
+                         Content="Skip this part (do not upload)" 
+                         IsChecked="True"
+                         Margin="0,0,0,15"
+                         FontSize="13"/>
+
+            <RadioButton x:Name="rbOriginal" 
+                         Content="Upload with original quantity (override existing)" 
+                         Margin="0,0,0,15"
+                         FontSize="13"/>
+
+            <RadioButton x:Name="rbDifference">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Upload with difference quantity only (add to existing)" FontSize="13"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <TextBlock Text="Calculation: " FontStyle="Italic"/>
+                        <TextBlock Text="{Binding NewQuantity}" FontWeight="SemiBold"/>
+                        <TextBlock Text=" - "/>
+                        <TextBlock Text="{Binding ExistingQuantity}" FontWeight="SemiBold"/>
+                        <TextBlock Text=" = "/>
+                        <TextBlock Text="{Binding DifferenceQuantity}" FontWeight="SemiBold" Foreground="#9C27B0"/>
+                        <TextBlock Text=" units" Margin="3,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right">
+            <Button Content="Cancel" 
+                    Width="80" 
+                    Height="30" 
+                    Margin="0,0,10,0"
+                    Click="CancelButton_Click"/>
+            <Button Content="Continue" 
+                    Width="100" 
+                    Height="30"
+                    Background="#2196F3"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Click="ContinueButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

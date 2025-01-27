@@ -1,0 +1,199 @@
+﻿<Window x:Class="BOMVIEW.CatalogBulkUpdateDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:BOMVIEW.Controls"
+        Title="Bulk Update from DigiKey" 
+        Height="600" 
+        Width="800"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Bulk Update Catalogs from DigiKey"
+                     FontSize="24"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,10"/>
+            <TextBlock Text="This process will update product information from DigiKey for all parts in the selected catalogs."
+                     TextWrapping="Wrap"
+                     Margin="0,0,0,10"/>
+            <TextBlock Text="Note: This operation may take a while depending on the number of catalogs and parts to process."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
+        </StackPanel>
+
+        <!-- Catalog Selection -->
+        <Border Grid.Row="1" 
+                Background="White"
+                CornerRadius="8"
+                Padding="20"
+                Margin="0,0,0,20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                    <CheckBox x:Name="SelectAllCheckbox"
+                             Content="Select All Catalogs"
+                             VerticalAlignment="Center"
+                             Checked="SelectAllCheckbox_CheckedChanged"
+                             Unchecked="SelectAllCheckbox_CheckedChanged"/>
+
+                    <TextBox x:Name="SearchBox"
+                            Width="200"
+                            Height="30"
+                            Margin="20,0,0,0"
+                            DockPanel.Dock="Right"
+                            TextChanged="SearchBox_TextChanged">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TextBox">
+                                            <Border Background="White"
+                                                    BorderBrush="#E5E7EB"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4">
+                                                <Grid>
+                                                    <TextBox Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, UpdateSourceTrigger=PropertyChanged}"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             Padding="8,4"
+                                                             VerticalContentAlignment="Center"/>
+                                                    <TextBlock Text="Search catalogs..."
+                                                             Padding="8,4"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="Gray">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TextBox}}" Value="">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </DockPanel>
+
+                <DataGrid x:Name="CatalogsGrid"
+                          Grid.Row="1"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="False"
+                          SelectionMode="Extended"
+                          SelectionUnit="FullRow"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          HeadersVisibility="Column"
+                          BorderThickness="1"
+                          BorderBrush="#E5E7EB"
+                          Background="White">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Width="40">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Catalog Name" 
+                                          Binding="{Binding Name}" 
+                                          Width="*"/>
+                        <DataGridTextColumn Header="Last Updated" 
+                                          Binding="{Binding LastUpdated}" 
+                                          Width="150"/>
+                        <DataGridTextColumn Header="Items Count" 
+                                          Binding="{Binding ItemsCount}" 
+                                          Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <!-- Progress Section -->
+        <Border Grid.Row="2" 
+                Background="White"
+                CornerRadius="8"
+                Padding="20"
+                Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="Progress"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Margin="0,0,0,10"/>
+                <ProgressBar x:Name="ProgressBar"
+                           Height="20"
+                           Margin="0,0,0,10"/>
+                <TextBlock x:Name="StatusText"
+                         Text="Ready to start..."
+                         Margin="0,0,0,10"/>
+                <TextBlock x:Name="UpdateCountText"
+                         Text="Processed: 0/0 | Updated: 0 | Failed: 0"
+                         FontFamily="Consolas"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Warning Message -->
+        <Border Grid.Row="3"
+                Background="#FFF3E0"
+                CornerRadius="8"
+                Padding="15"
+                Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="⚠️"
+                         FontSize="20"
+                         Margin="0,0,10,0"
+                         VerticalAlignment="Center"/>
+                <TextBlock Text="Please ensure you have a stable internet connection. The process can be cancelled at any time, but already updated items will remain updated."
+                         TextWrapping="Wrap"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" 
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button x:Name="CloseButton"
+                    Content="Close"
+                    Width="100"
+                    Height="35"
+                    Margin="0,0,10,0"
+                    Click="CloseButton_Click"/>
+            <Button x:Name="StartButton"
+                    Content="Start Update"
+                    Width="120"
+                    Height="35"
+                    Background="#2196F3"
+                    Foreground="White"
+                    Click="StartButton_Click"/>
+        </StackPanel>
+
+        <!-- Loading Overlay -->
+        <controls:LoadingOverlay x:Name="LoadingOverlay" 
+                            Grid.Row="0"
+                            Grid.RowSpan="5"
+                            Panel.ZIndex="1000"/>
+    </Grid>
+</Window>

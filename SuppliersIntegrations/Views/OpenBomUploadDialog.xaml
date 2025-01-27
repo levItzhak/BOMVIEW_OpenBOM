@@ -1,0 +1,462 @@
+﻿<Window x:Class="BOMVIEW.OpenBomUploadDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:controls="clr-namespace:BOMVIEW.Controls"
+        xmlns:local="clr-namespace:BOMVIEW"
+        xmlns:views="clr-namespace:BOMVIEW.Views"
+        Title="OpenBOM-connect" 
+        Height="700" 
+        Width="950"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Button Style -->
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#607D8B"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#455A64"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Action Button Style -->
+        <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#4CAF50"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#388E3C"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="10" Opacity="0.1" ShadowDepth="1"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel: Configuration Options -->
+        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" 
+                Style="{StaticResource CardStyle}"
+                Margin="0,0,15,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Title -->
+                    <TextBlock Text="Configuration" 
+                               Style="{StaticResource SectionHeader}"/>
+
+                    <!-- BOM Type -->
+                    <GroupBox Header="BOM Type" Margin="0,0,0,15" Padding="5">
+                        <StackPanel>
+                            <RadioButton x:Name="rbNewBom" 
+                                         Content="Create New BOM" 
+                                         IsChecked="True" 
+                                         Margin="0,5,0,5" 
+                                         Checked="rbNewBom_Checked"/>
+                            <RadioButton x:Name="rbExistingBom" 
+                                         Content="Use Existing BOM" 
+                                         Margin="0,5,0,5" 
+                                         Checked="rbExistingBom_Checked"/>
+                            <RadioButton x:Name="rbChildBom" 
+                                         Content="Create as Child BOM" 
+                                         Margin="0,5,0,5" 
+                                         Checked="rbChildBom_Checked"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- New BOM Options -->
+                    <Border x:Name="gridNewBom" 
+                            BorderThickness="0" 
+                            Margin="0,0,0,15" 
+                            Visibility="Visible">
+                        <StackPanel>
+                            <TextBlock Text="New BOM Information" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Part Number:" Margin="0,0,0,5"/>
+                            <TextBox x:Name="txtNewBomPartNumber" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="BOM Name:" Margin="0,0,0,5"/>
+                            <TextBox x:Name="txtNewBomName" Margin="0,0,0,10"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Child BOM Options -->
+                    <Border x:Name="gridChildBom" 
+                            BorderThickness="0" 
+                            Margin="0,0,0,15" 
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="Child BOM Information" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Child Part Number:" Margin="0,0,0,5"/>
+                            <TextBox x:Name="txtChildBomPartNumber" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Child BOM Name:" Margin="0,0,0,5"/>
+                            <TextBox x:Name="txtChildBomName" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Parent BOM:" Margin="0,0,0,5"/>
+                            <TextBox x:Name="txtParentBomSearch" 
+                                     Margin="0,0,0,5"
+                                     TextChanged="txtParentBomSearch_TextChanged">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Style.Resources>
+                                            <VisualBrush x:Key="PlaceholderBrush" TileMode="None" Stretch="None" AlignmentX="Left" AlignmentY="Center">
+                                                <VisualBrush.Visual>
+                                                    <TextBlock Text="Search by name or part #" 
+                                                              Foreground="Gray" 
+                                                              Padding="5,0,0,0"/>
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Style.Resources>
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="">
+                                                <Setter Property="Background" Value="{StaticResource PlaceholderBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter Property="Background" Value="White"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="1" 
+                                        x:Name="btnSearchParentBom"
+                                        Content="Search" 
+                                        Width="70"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Click="btnSearchParentBom_Click"/>
+                            </Grid>
+
+                            <Border BorderBrush="#DDDDDD" 
+                                    BorderThickness="1" 
+                                    Margin="0,0,0,5">
+                                <ListBox x:Name="lstParentBomResults" 
+                                         Height="150"
+                                         DisplayMemberPath="Name"
+                                         SelectionChanged="lstParentBomResults_SelectionChanged"/>
+                            </Border>
+
+                            <TextBlock x:Name="txtSelectedParentBom" 
+                                       TextWrapping="Wrap"
+                                       Margin="0,5,0,5"
+                                       FontWeight="SemiBold"/>
+
+                            <Button Content="Refresh Parent BOMs" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Width="140"
+                                    HorizontalAlignment="Left"
+                                    Click="RefreshParentBoms_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <GroupBox Header="Comparison" Margin="0,0,0,15" Padding="5">
+                        <StackPanel>
+                            <CheckBox x:Name="chkCompareWithExisting" 
+                  Content="Compare with existing BOM" 
+                  Margin="0,5,0,5"
+                  Checked="chkCompareWithExisting_Checked"
+                  Unchecked="chkCompareWithExisting_Unchecked"/>
+
+                            <CheckBox x:Name="chkSkipCatalogProcessing" 
+                  Content="Skip catalog checking (defined BOM parts)" 
+                  Margin="0,5,0,5"/>
+
+                            <Grid x:Name="gridComparison" Visibility="Collapsed">
+                                <StackPanel Margin="10,5,0,0">
+                                    <TextBlock Text="Search for BOM to compare:" 
+                           Margin="0,0,0,5"
+                           FontWeight="SemiBold"/>
+
+                                    <Grid Margin="0,0,0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox x:Name="txtComparisonSearch" 
+                             Grid.Column="0"
+                             Padding="8,5"
+                             TextChanged="txtComparisonSearch_TextChanged">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                    <Style.Resources>
+                                                        <VisualBrush x:Key="PlaceholderBrush" TileMode="None" Stretch="None" AlignmentX="Left" AlignmentY="Center">
+                                                            <VisualBrush.Visual>
+                                                                <TextBlock Text="Enter BOM name or part #" 
+                                                      Foreground="Gray" 
+                                                      Padding="5,0,0,0"/>
+                                                            </VisualBrush.Visual>
+                                                        </VisualBrush>
+                                                    </Style.Resources>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="Text" Value="">
+                                                            <Setter Property="Background" Value="{StaticResource PlaceholderBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                                            <Setter Property="Background" Value="White"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+
+                                        <Button x:Name="btnSearchBom" 
+                            Grid.Column="1"
+                            Content="Search" 
+                            Width="70"
+                            Background="#2196F3"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Padding="5,5"
+                            Margin="5,0,0,0"
+                            Click="btnSearchBom_Click"/>
+                                    </Grid>
+
+                                    <Border BorderBrush="#DDDDDD" 
+                        BorderThickness="1" 
+                        Margin="0,0,0,5" 
+                        CornerRadius="4">
+                                        <ListBox x:Name="lstComparisonResults" 
+                             Height="120"
+                             DisplayMemberPath="Name"
+                             BorderThickness="0"
+                             SelectionChanged="lstComparisonResults_SelectionChanged"/>
+                                    </Border>
+
+                                    <TextBlock x:Name="txtSelectedComparison" 
+                           TextWrapping="Wrap"
+                           Margin="0,5,0,0"
+                           FontWeight="SemiBold"
+                           Foreground="#2196F3"/>
+
+                                    <Border BorderBrush="#E3F2FD" 
+                        BorderThickness="1" 
+                        Background="#E3F2FD"
+                        Margin="0,10,0,0"
+                        Padding="10"
+                        CornerRadius="4">
+                                        <TextBlock TextWrapping="Wrap">
+                        <Run FontWeight="SemiBold">Comparison will:</Run>
+                        <LineBreak/>
+                        • Skip parts with identical quantities
+                        <LineBreak/>
+                        • Prompt for parts with different quantities
+                        <LineBreak/>
+                        • Add new parts not found in the comparison BOM
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Catalog Options -->
+                    <GroupBox Header="Catalog Options" Margin="0,0,0,15" Padding="5">
+                        <StackPanel>
+                            <RadioButton x:Name="rbAutoSelectCatalog" 
+                                         Content="Auto-detect catalog for each part" 
+                                         IsChecked="True" 
+                                         Margin="0,5,0,5"/>
+                            <RadioButton x:Name="rbPreSelectCatalog" 
+                                         Content="Pre-select default catalog" 
+                                         Margin="0,0,0,5"
+                                         Checked="rbPreSelectCatalog_Checked"/>
+
+                            <ComboBox x:Name="comboDefaultCatalog" 
+                                     Margin="10,5,0,5" 
+                                     IsEnabled="{Binding ElementName=rbPreSelectCatalog, Path=IsChecked}"
+                                     DisplayMemberPath="Name"/>
+
+                            <Button Content="Refresh Catalogs" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Width="120"
+                                    HorizontalAlignment="Left"
+                                    Margin="10,5,0,0"
+                                    Click="RefreshCatalogs_Click"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Status Display -->
+                    <TextBlock Text="Status" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                    <Border BorderBrush="#DDDDDD" 
+                            BorderThickness="1" 
+                            MinHeight="80" 
+                            Margin="0,0,0,10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="StatusText" 
+                                       Margin="5"
+                                       TextWrapping="Wrap"/>
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Right Panel: Tree View and Actions -->
+        <Grid Grid.Row="0" Grid.Column="1" Grid.RowSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <TextBlock Grid.Row="0" 
+                       Text="OpenBOM Browser" 
+                       Style="{StaticResource SectionHeader}"
+                       Margin="0,0,0,10"/>
+
+            <!-- Tree View -->
+            <Border Grid.Row="1" 
+                    Style="{StaticResource CardStyle}">
+                <views:BomTreeView x:Name="BomTreeView"/>
+            </Border>
+
+            <!-- Action Buttons -->
+            <StackPanel Grid.Row="2" 
+                        Orientation="Horizontal" 
+                        HorizontalAlignment="Right"
+                        Margin="0,10,0,0">
+
+
+                <Button x:Name="btnFindColumn"
+        Content="Find Column" 
+        Style="{StaticResource SecondaryButton}"
+        Width="120"
+        Margin="0,0,10,0"
+        Click="btnFindColumn_Click"/>
+
+
+
+                <Button x:Name="btnCompareBoms"
+        Content="Compare BOMs"
+        Style="{StaticResource SecondaryButton}"
+        Width="120"
+        Margin="0,0,10,0"
+        Click="btnCompareBoms_Click"/>
+
+
+
+                <Button x:Name="SummaryButton"
+                        Content="View Summary"
+                        Style="{StaticResource SecondaryButton}"
+                        Width="120"
+                        Margin="0,0,10,0"
+                        Click="SummaryButton_Click"
+                        Visibility="Collapsed"/>
+
+                <Button x:Name="CatalogDuplicatesButton"
+                        Content="Catalog Duplicates"
+                        Style="{StaticResource SecondaryButton}"
+                        Width="140"
+                        Margin="0,0,10,0"
+                        Click="CatalogDuplicatesButton_Click"/>
+
+                <Button x:Name="CatalogBulkUpdateButton"
+                        Content="Catalog Bulk Update"
+                        Style="{StaticResource SecondaryButton}"
+                        Width="150"
+                        Margin="0,0,10,0"
+                        Click="CatalogBulkUpdateButton_Click"/>
+
+                <Button x:Name="ViewButton"
+                        Content="View in OpenBOM"
+                        Style="{StaticResource SecondaryButton}"
+                        Width="140"
+                        Margin="0,0,10,0"
+                        Click="ViewButton_Click"
+                        Visibility="Collapsed"/>
+
+                <Button x:Name="CatalogProcessButton"
+        Content="Process Catalogs First"
+        Style="{StaticResource SecondaryButton}"
+        Width="170"
+        Margin="0,0,10,0"
+        Click="ProcessCatalogFirstButton_Click"/>
+                
+                
+                <Button x:Name="UploadButton"
+                        Content="Upload Electrical BOM"
+                        Style="{StaticResource ActionButton}"
+                        Width="170"
+                        Click="UploadButton_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Loading Overlay -->
+        <controls:EnhancedLoadingOverlay x:Name="LoadingOverlay" 
+                             Grid.RowSpan="4" 
+                             Grid.ColumnSpan="2"
+                             Panel.ZIndex="1000"/>
+    </Grid>
+</Window>
+

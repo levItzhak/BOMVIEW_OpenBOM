@@ -1,0 +1,306 @@
+﻿<Window x:Class="BOMVIEW.ExternalSupplierDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        Title="Add External Supplier" 
+        Height="580" 
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#F5F7FA">
+
+    <Window.Resources>
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#CCCCCC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Margin" Value="0,4,0,8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                        Margin="{TemplateBinding Padding}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        HorizontalScrollBarVisibility="Hidden"
+                                        VerticalScrollBarVisibility="Hidden"
+                                        Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#2196F3"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ModernDatePicker" TargetType="DatePicker">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="Margin" Value="0,4,0,8"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="External Supplier Information" 
+                   FontSize="20" 
+                   FontWeight="SemiBold" 
+                   Margin="0,0,0,15"/>
+
+        <!-- Form Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Original Part Information Section -->
+                <Border Background="#F9FAFB" 
+                        BorderBrush="#E5E7EB" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="15" 
+                        Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="Original Part Information" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="16" 
+                                   Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Ordering Code:" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding OrderingCode}" 
+                                       VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Designator:" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Designator}" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Value:" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Value}" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="PCB Footprint:" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PcbFootprint}" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Quantity Required:" 
+                                       VerticalAlignment="Center" Margin="0,4"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding QuantityTotal}" 
+                                       VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,4"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- External Supplier Information Section -->
+                <Border Background="White" 
+                        BorderBrush="#E5E7EB" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="15" 
+                        Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="External Supplier Details"
+                           FontWeight="SemiBold"
+                           FontSize="16"
+                           Margin="0,0,0,10"/>
+
+                        <TextBlock Text="Supplier Name *"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                         FontSize="12"/>
+
+                        <TextBlock Text="Unit Price"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding UnitPrice, StringFormat=N5, Mode=TwoWay}"
+                         PreviewTextInput="NumberValidationTextBox"
+                         FontSize="12"/>
+
+                        <TextBlock Text="Total Price"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding TotalPrice, StringFormat=N2}"
+                         IsReadOnly="True"
+                         FontSize="12"/>
+
+                        <TextBlock Text="Availability (Stock) If you don't know what the quantity is, enter 1. *"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding Availability, Mode=TwoWay}"
+                         PreviewTextInput="PositiveIntegerValidationTextBox"
+                         FontSize="12"/>
+
+
+                        <TextBlock Text="Supplier URL"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding SupplierUrl, Mode=TwoWay}"
+                         FontSize="12"/>
+
+                        <TextBlock Text="Contact Information"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding ContactInfo, Mode=TwoWay}"
+                         FontSize="12"/>
+                        <TextBlock Text="Estimated Delivery Date"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <Grid Margin="0,4,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <DatePicker Grid.Column="0"
+                                Style="{StaticResource ModernDatePicker}"
+                                SelectedDate="{Binding EstimatedDeliveryDate}"
+                                DisplayDateStart="{x:Static system:DateTime.Today}"/>
+                            <Button Grid.Column="1"
+                            Content="Clear"
+                            Click="ClearDateButton_Click"
+                            Margin="5,0,0,0"
+                            Padding="8,0"
+                            Height="34"
+                            Style="{StaticResource SecondaryButton}"/>
+                        </Grid>
+                        <TextBlock Text="Notes"
+                           FontWeight="SemiBold"
+                           Margin="0,5,0,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding Notes, Mode=TwoWay}"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         HorizontalAlignment="Stretch"
+                         VerticalContentAlignment="Top"
+                         VerticalScrollBarVisibility="Auto"
+                         FontSize="12"
+                         MinHeight="100"/>
+
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Locate the Buttons StackPanel in ExternalSupplierDialog.xaml and replace it with this -->
+        <StackPanel Grid.Row="2" 
+            Orientation="Horizontal" 
+            HorizontalAlignment="Right" 
+            Margin="0,10,0,0">
+            <Button Content="Skip" 
+            Click="SkipButton_Click"
+            Style="{StaticResource SecondaryButton}" 
+            Background="#F5F3FF"
+            Foreground="#9333EA"
+            BorderBrush="#E9D5FF"
+            BorderThickness="1"
+            Width="100" 
+            Margin="0,0,10,0"
+            ToolTip="Mark as external supplier with minimal information"/>
+            <Button Content="Save" 
+            Click="SaveButton_Click"
+            Style="{StaticResource PrimaryButton}" 
+            Width="100" 
+            Margin="0,0,10,0"/>
+            <Button Content="Cancel" 
+            Click="CancelButton_Click"
+            Style="{StaticResource SecondaryButton}" 
+            Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>

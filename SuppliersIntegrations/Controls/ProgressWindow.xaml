@@ -1,0 +1,228 @@
+﻿<Window x:Class="BOMVIEW.Controls.ProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Operation Progress" 
+        Height="500" 
+        Width="650"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="#F0F2F5">
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Button Style -->
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#607D8B"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#455A64"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Danger Button Style -->
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#F44336"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#D32F2F"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Success Button Style -->
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#4CAF50"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#388E3C"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock x:Name="OperationTitleText" 
+                   Grid.Row="0" 
+                   Text="Operation Progress" 
+                   FontSize="20" 
+                   FontWeight="SemiBold" 
+                   Margin="0,0,0,15"/>
+
+        <!-- Status Section -->
+        <Border Grid.Row="1" 
+                Background="White" 
+                CornerRadius="6" 
+                Padding="15" 
+                Margin="0,0,0,15">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status text -->
+                <TextBlock x:Name="StatusText" 
+                           Grid.Row="0" 
+                           Grid.Column="0"
+                           Text="Initializing..." 
+                           FontSize="16" 
+                           FontWeight="Medium"
+                           Margin="0,0,0,10"/>
+
+                <!-- Elapsed time -->
+                <StackPanel Grid.Row="0" 
+                            Grid.Column="1" 
+                            Orientation="Horizontal">
+                    <TextBlock Text="Elapsed time: " 
+                               FontSize="12" 
+                               Foreground="#555555"/>
+                    <TextBlock x:Name="ElapsedTimeText" 
+                               Text="00:00:00" 
+                               FontSize="12" 
+                               Foreground="#555555"
+                               FontFamily="Consolas"/>
+                </StackPanel>
+
+                <!-- Progress bar -->
+                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+                    <ProgressBar x:Name="ProgressBar" 
+                                 Height="10" 
+                                 Value="0" 
+                                 Maximum="100"
+                                 Foreground="#2196F3"
+                                 BorderThickness="0"/>
+                </Grid>
+
+                <!-- Progress details -->
+                <TextBlock x:Name="ProgressDetailsText" 
+                           Grid.Row="2" 
+                           Grid.Column="0"
+                           Text="0 of 0 completed" 
+                           FontSize="12" 
+                           Foreground="#555555"
+                           Margin="0,8,0,0"/>
+
+                <!-- Progress percentage -->
+                <TextBlock x:Name="ProgressPercentText" 
+                           Grid.Row="2" 
+                           Grid.Column="1"
+                           Text="0%" 
+                           FontSize="12" 
+                           Foreground="#555555"
+                           FontWeight="SemiBold"
+                           Margin="0,8,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Latest Activity Section -->
+        <Border Grid.Row="2" 
+                Background="White" 
+                CornerRadius="6" 
+                Padding="15" 
+                Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="Operation Log" 
+                           FontWeight="SemiBold" 
+                           Margin="0,0,0,10"/>
+
+                <TextBox x:Name="LogTextBox" 
+                         Height="200" 
+                         IsReadOnly="True" 
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas"
+                         FontSize="12"
+                         Background="#FAFAFA"/>
+
+                <Button x:Name="SaveLogButton" 
+                        Content="Save Log" 
+                        Style="{StaticResource SecondaryButton}"
+                        HorizontalAlignment="Right"
+                        Width="80"
+                        Height="30"
+                        Margin="0,10,0,0"
+                        Click="SaveLogButton_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Operation Details Section -->
+        <Expander Grid.Row="3" 
+                  Header="Operation Details" 
+                  IsExpanded="False"
+                  Margin="0,0,0,15">
+            <Border Background="White" 
+                    CornerRadius="6" 
+                    Padding="15" 
+                    Margin="0,10,0,0">
+                <StackPanel>
+                    <!-- This section can be customized for specific operations -->
+                    <TextBlock Text="No additional details available." Foreground="#666666"/>
+                </StackPanel>
+            </Border>
+        </Expander>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="5" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right">
+            <Button x:Name="CancelButton" 
+                    Content="Cancel" 
+                    Style="{StaticResource DangerButton}"
+                    Width="100"
+                    Margin="0,0,10,0"
+                    Click="CancelButton_Click"/>
+
+            <Button x:Name="CloseButton" 
+                    Content="Close" 
+                    Style="{StaticResource SuccessButton}"
+                    Width="100"
+                    Visibility="Collapsed"
+                    Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

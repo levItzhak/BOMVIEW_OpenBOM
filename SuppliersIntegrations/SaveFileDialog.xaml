@@ -1,0 +1,88 @@
+﻿<Window x:Class="BOMVIEW.SaveFileDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Save BOM File" 
+        Height="250" 
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F5">
+
+    <Window.Resources>
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- File Name Section -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="File Name" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="txtFileName" 
+                         IsReadOnly="True"
+                         Padding="8"
+                         Margin="0,0,10,0"/>
+                <Button Grid.Column="1"
+                        Content="Browse"
+                        Click="BrowseButton_Click"
+                        Style="{StaticResource ModernButton}"
+                        Padding="15,8"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Options -->
+        <StackPanel Grid.Row="1" Margin="0,20,0,0">
+            <CheckBox x:Name="chkOpenAfterSave" 
+                      Content="Open file after saving" 
+                      IsChecked="True"
+                      Margin="0,0,0,10"/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right">
+            <Button Content="Cancel"
+                    Click="CancelButton_Click"
+                    Style="{StaticResource ModernButton}"
+                    Background="#6c757d"
+                    Margin="0,0,10,0"/>
+            <Button Content="Save"
+                    Click="SaveButton_Click"
+                    Style="{StaticResource ModernButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>
