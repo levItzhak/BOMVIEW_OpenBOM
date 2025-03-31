@@ -1262,71 +1262,129 @@ namespace BOMVIEW
                     // Ensure directory exists
                     Directory.CreateDirectory(bomFolderPath);
 
-                    // Save main BOM file
-                    string mainBomPath = Path.Combine(bomFolderPath, $"{baseFileName}_PRICES.xlsx");
-                    await _excelService.SaveBomFileAsync(mainBomPath, _bomEntries.ToList());
+                    // Get the selected file options
+                    var selectedOptions = saveDialog.GetSelectedOptions();
                     StringBuilder exportLog = new StringBuilder();
+                    exportLog.AppendLine($"Export started at {DateTime.Now}");
 
-                    // Export missing parts to a separate file
-                    string missingPartsFilePath = null;
-                    var missingPartsCount = _bomEntries.Count(e =>
-                        !(e.DigiKeyData?.IsAvailable ?? false) &&
-                        !(e.MouserData?.IsAvailable ?? false) &&
-                        !(e.FarnellData?.IsAvailable ?? false));
-
-                    if (missingPartsCount > 0)
+                    // Save main BOM file
+                    if (selectedOptions["MainBom"])
                     {
-                        missingPartsFilePath = await ExportMissingPartsFile(bomFolderPath, baseFileName);
+                        string mainBomPath = Path.Combine(bomFolderPath, $"{baseFileName}_PRICES.xlsx");
+                        await _excelService.SaveBomFileAsync(mainBomPath, _bomEntries.ToList());
+                        exportLog.AppendLine("Main BOM file exported.");
+
+                        // If external suppliers are selected and exist, add them to the main file as well
+                        if (selectedOptions["ExternalSuppliers"] && _externalSupplierService.ExternalSupplierEntries.Any())
+                        {
+                            try
+                            {
+                                await _excelService.SaveExternalSuppliersSheetAsync(
+                                    mainBomPath,
+                                    _externalSupplierService.ExternalSupplierEntries.ToList());
+
+                                exportLog.AppendLine("External suppliers exported to separate sheet in main file.");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError($"Error exporting external suppliers to main file: {ex.Message}");
+                                exportLog.AppendLine($"Error exporting external suppliers to main file: {ex.Message}");
+                            }
+                        }
                     }
 
-
-                    if (_externalSupplierService.ExternalSupplierEntries.Any())
+                    // Export missing parts to a separate file
+                    if (selectedOptions["MissingParts"])
                     {
-                        try
-                        {
-                            await _excelService.SaveExternalSuppliersSheetAsync(
-                                mainBomPath,
-                                _externalSupplierService.ExternalSupplierEntries.ToList());
+                        var missingPartsCount = _bomEntries.Count(e =>
+                            !(e.DigiKeyData?.IsAvailable ?? false) &&
+                            !(e.MouserData?.IsAvailable ?? false) &&
+                            !(e.FarnellData?.IsAvailable ?? false));
 
-                            exportLog.AppendLine("External suppliers exported to separate sheet.");
-                        }
-                        catch (Exception ex)
+                        if (missingPartsCount > 0)
                         {
-                            _logger.LogError($"Error exporting external suppliers: {ex.Message}");
+                            try
+                            {
+                                string missingPartsFilePath = await ExportMissingPartsFile(bomFolderPath, baseFileName);
+                                exportLog.AppendLine($"Missing parts exported to {Path.GetFileName(missingPartsFilePath)}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError($"Error exporting missing parts: {ex.Message}");
+                                exportLog.AppendLine($"Error exporting missing parts: {ex.Message}");
+                            }
+                        }
+                        else
+                        {
+                            exportLog.AppendLine("No missing parts to export.");
                         }
                     }
 
                     // Export DigiKey files
-                    string dkListPath = Path.Combine(bomFolderPath, $"{baseFileName}_DK_List.xlsx");
-                    string dkBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_DK_Best_Prices.xlsx");
-                    await _digiKeyExporter.ExportDigiKeyItemsAsync(_bomEntries.ToList(), dkListPath, Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
-                    await _digiKeyExporter.ExportDigiKeyItemsAsync(_bomEntries.ToList(), dkBestPricesPath, Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                    if (selectedOptions["DigiKeyList"])
+                    {
+                        string dkListPath = Path.Combine(bomFolderPath, $"{baseFileName}_DK_List.xlsx");
+                        await _digiKeyExporter.ExportDigiKeyItemsAsync(_bomEntries.ToList(), dkListPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
+                        exportLog.AppendLine("DigiKey list exported.");
+                    }
+
+                    if (selectedOptions["DigiKeyBestPrices"])
+                    {
+                        string dkBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_DK_Best_Prices.xlsx");
+                        await _digiKeyExporter.ExportDigiKeyItemsAsync(_bomEntries.ToList(), dkBestPricesPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                        exportLog.AppendLine("DigiKey best prices exported.");
+                    }
 
                     // Export Mouser files
-                    string msListPath = Path.Combine(bomFolderPath, $"{baseFileName}_MS_List.xlsx");
-                    string msBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_MS_Best_Prices.xlsx");
-                    await _mouserExporter.ExportMouserItemsAsync(_bomEntries.ToList(), msListPath, Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
-                    await _mouserExporter.ExportMouserItemsAsync(_bomEntries.ToList(), msBestPricesPath, Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                    if (selectedOptions["MouserList"])
+                    {
+                        string msListPath = Path.Combine(bomFolderPath, $"{baseFileName}_MS_List.xlsx");
+                        await _mouserExporter.ExportMouserItemsAsync(_bomEntries.ToList(), msListPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
+                        exportLog.AppendLine("Mouser list exported.");
+                    }
+
+                    if (selectedOptions["MouserBestPrices"])
+                    {
+                        string msBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_MS_Best_Prices.xlsx");
+                        await _mouserExporter.ExportMouserItemsAsync(_bomEntries.ToList(), msBestPricesPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                        exportLog.AppendLine("Mouser best prices exported.");
+                    }
 
                     // Export Farnell files
-                    string frListPath = Path.Combine(bomFolderPath, $"{baseFileName}_FR_List.xlsx");
-                    string frBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_FR_Best_Prices.xlsx");
-                    await _farnellExporter.ExportFarnellItemsAsync(_bomEntries.ToList(), frListPath, Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
-                    await _farnellExporter.ExportFarnellItemsAsync(_bomEntries.ToList(), frBestPricesPath, Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                    if (selectedOptions["FarnellList"])
+                    {
+                        string frListPath = Path.Combine(bomFolderPath, $"{baseFileName}_FR_List.xlsx");
+                        await _farnellExporter.ExportFarnellItemsAsync(_bomEntries.ToList(), frListPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
+                        exportLog.AppendLine("Farnell list exported.");
+                    }
 
+                    if (selectedOptions["FarnellBestPrices"])
+                    {
+                        string frBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_FR_Best_Prices.xlsx");
+                        await _farnellExporter.ExportFarnellItemsAsync(_bomEntries.ToList(), frBestPricesPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                        exportLog.AppendLine("Farnell best prices exported.");
+                    }
 
                     // Export External Supplier files
-                    string externalSuppliersPath = Path.Combine(bomFolderPath, $"{baseFileName}_External_Suppliers.xlsx");
-                    if (_externalSupplierService.ExternalSupplierEntries.Any())
+                    if (selectedOptions["ExternalSuppliers"] && _externalSupplierService.ExternalSupplierEntries.Any())
                     {
+                        string externalSuppliersPath = Path.Combine(bomFolderPath, $"{baseFileName}_External_Suppliers.xlsx");
                         await _externalSupplierExporter.ExportExternalSupplierItemsAsync(_bomEntries.ToList(), externalSuppliersPath);
                         exportLog.AppendLine("External suppliers list exported to separate file.");
                     }
 
-                    MessageBox.Show($"All files saved successfully to:\n{bomFolderPath}",
+                    // Save export log
+                    string logPath = Path.Combine(bomFolderPath, $"{baseFileName}_export_log.txt");
+                    await File.WriteAllTextAsync(logPath, exportLog.ToString());
+
+                    MessageBox.Show($"Files saved successfully to:\n{bomFolderPath}",
                         "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-
-
 
                     if (saveDialog.OpenAfterSave)
                     {
@@ -1360,7 +1418,6 @@ namespace BOMVIEW
                 }
             }
         }
-
 
         public event PropertyChangedEventHandler PropertyChanged;
 
