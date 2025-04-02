@@ -52,6 +52,8 @@ namespace BOMVIEW
         private readonly ExternalSupplierExporter _externalSupplierExporter;
         private readonly ISupplierService _israelService;
         private readonly IsraelExporter _israelExporter;
+        private readonly DispatcherTimer _exchangeRateTimer;
+        private CurrencyExchangeService _currencyService;
         public ObservableCollection<string> DuplicateOrderingCodes
         {
             get => _duplicateOrderingCodes;
@@ -126,6 +128,9 @@ namespace BOMVIEW
             _bomEntriesView = CollectionViewSource.GetDefaultView(_bomEntries);
             _bomEntriesView.Filter = BomEntryFilter;
 
+            // Initialize the currency service from the Israel service
+            _currencyService = ((IsraelService)_israelService).CurrencyService;
+
             // Initialize exporters
             _digiKeyExporter = new DigiKeyExporter(_logger, (DigiKeyService)_digiKeyService, _currentFilePath);
             _mouserExporter = new MouserExporter(_logger, (MouserService)_mouserService, _currentFilePath);
@@ -136,6 +141,63 @@ namespace BOMVIEW
             // Load templates into the combo box
             LoadTemplates();
             LoadingOverlay.CancelRequested += LoadingOverlay_CancelRequested;
+            
+            // Initialize the exchange rate display
+            InitializeExchangeRateDisplay();
+            
+            // Set up timer to update exchange rate periodically
+            _exchangeRateTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(30) // Update every 30 minutes
+            };
+            _exchangeRateTimer.Tick += ExchangeRateTimer_Tick;
+            _exchangeRateTimer.Start();
+        }
+        
+        // Add this method to handle the timer tick
+        private async void ExchangeRateTimer_Tick(object sender, EventArgs e)
+        {
+            await UpdateExchangeRateDisplay();
+        }
+        
+        // Add this method to initialize the exchange rate display
+        private async void InitializeExchangeRateDisplay()
+        {
+            await UpdateExchangeRateDisplay();
+        }
+        
+        // Add this method to update the exchange rate display
+        private async Task UpdateExchangeRateDisplay()
+        {
+            try
+            {
+                await _currencyService.UpdateExchangeRateAsync();
+                
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    txtExchangeRate.Text = _currencyService.UsdToIlsRate.ToString("F2");
+                    
+                    // Format the timestamp
+                    string timeFormat = _currencyService.LastUpdate.Date == DateTime.Today
+                        ? "Today " + _currencyService.LastUpdate.ToString("HH:mm")
+                        : _currencyService.LastUpdate.ToString("dd/MM HH:mm");
+                        
+                    txtExchangeRateTimestamp.Text = $"({timeFormat})";
+                });
+                
+                _logger.LogInfo($"Exchange rate display updated: {_currencyService.UsdToIlsRate:F2} ILS");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating exchange rate display: {ex.Message}");
+                
+                // Show default values in case of error
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    txtExchangeRate.Text = "3.60";
+                    txtExchangeRateTimestamp.Text = "(default)";
+                });
+            }
         }
 
         public void RefreshAfterExternalSupplierChange(int bomEntryNum)

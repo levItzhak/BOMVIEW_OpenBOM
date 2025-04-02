@@ -88,7 +88,7 @@ namespace BOMVIEW.Services
                     Price = price,
                     Availability = availability,
                     IsAvailable = availability > 0,
-                    MouserPartNumber = part.MouserPartNumber,
+                    MouserPartNumber = part.MouserPartNumber,  
                     PriceBreaks = new List<PriceBreak>()
                 };
 
@@ -120,17 +120,6 @@ namespace BOMVIEW.Services
                 _logger.LogError($"Error retrieving data for {partNumber}: {ex.Message}");
                 return new SupplierData { Price = 0, Availability = 0, IsAvailable = false };
             }
-
         }
-
-        private void CheckRateLimit(HttpResponseMessage response)
-        {
-            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-            {
-                throw new RateLimitException(SupplierType, "API rate limit exceeded");
-            }
-        }
-
-
     }
 }

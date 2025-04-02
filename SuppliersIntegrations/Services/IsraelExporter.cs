@@ -13,12 +13,14 @@ namespace BOMVIEW.Services
         private readonly ILogger _logger;
         private readonly IsraelService _israelService;
         private readonly string _originalFilePath;
+        private readonly CurrencyExchangeService _currencyService;
 
         public IsraelExporter(ILogger logger, IsraelService israelService, string originalFilePath)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _israelService = israelService ?? throw new ArgumentNullException(nameof(israelService));
             _originalFilePath = originalFilePath;
+            _currencyService = israelService.CurrencyService;
         }
 
         public async Task ExportIsraelListsAsync(List<BomEntry> entries, string originalFilePath)
@@ -103,11 +105,18 @@ namespace BOMVIEW.Services
             worksheet.Cells[1, 4].Value = "Designator";
             worksheet.Cells[1, 5].Value = "Quantity";
             worksheet.Cells[1, 6].Value = "Original Quantity";
-            worksheet.Cells[1, 7].Value = "Unit Price (₪)";
-            worksheet.Cells[1, 8].Value = "Total Price (₪)";
+            worksheet.Cells[1, 7].Value = "Unit Price ($)";
+            worksheet.Cells[1, 8].Value = "Total Price ($)";
+            worksheet.Cells[1, 9].Value = "Exchange Rate (USD/ILS)";
+
+            // Add exchange rate information
+            worksheet.Cells[1, 9].Value = "Exchange Rate (USD/ILS)";
+            worksheet.Cells[2, 9].Value = _currencyService.UsdToIlsRate;
+            worksheet.Cells[3, 9].Value = "Last Updated";
+            worksheet.Cells[4, 9].Value = _currencyService.LastUpdate.ToString("g");
 
             // Style headers
-            var headerRange = worksheet.Cells[1, 1, 1, 8];
+            var headerRange = worksheet.Cells[1, 1, 1, 9];
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
             headerRange.Style.Fill.BackgroundColor.SetColor(Color.LightGray);
@@ -181,10 +190,30 @@ namespace BOMVIEW.Services
                 row++;
             }
 
+            // Add note about USD pricing
+            worksheet.Cells[row + 1, 1].Value = "NOTE: All prices are displayed in USD (converted from ILS)";
+            worksheet.Cells[row + 1, 1, row + 1, 8].Merge = true;
+            worksheet.Cells[row + 1, 1].Style.Font.Bold = true;
+            worksheet.Cells[row + 1, 1].Style.Font.Italic = true;
+            worksheet.Cells[row + 1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            // Format currency columns
+            var priceColumns = worksheet.Cells[2, 7, row - 1, 8];
+            priceColumns.Style.Numberformat.Format = "$#,##0.00";
+            
+            // Format exchange rate cell
+            worksheet.Cells[2, 9].Style.Numberformat.Format = "#,##0.00";
+
             // Add borders and ensure text visibility without overriding colors
-            var dataRange = worksheet.Cells[1, 1, row - 1, 8];
+            var dataRange = worksheet.Cells[1, 1, row - 1, 9];
             StyleSheetBorders(dataRange);
             dataRange.Style.Font.Color.SetColor(Color.Black);
+
+            // Auto-fit columns
+            for (int i = 1; i <= 9; i++)
+            {
+                worksheet.Column(i).AutoFit();
+            }
 
             if (onlyBestPrice)
             {
@@ -202,6 +231,10 @@ namespace BOMVIEW.Services
             sheet.Cells[1, 1].Style.Font.Bold = true;
             sheet.Cells[1, 1].Style.Font.Size = 14;
 
+            // Add currency note
+            sheet.Cells[2, 1].Value = "All prices are in USD (converted from ILS at rate: " + _currencyService.UsdToIlsRate.ToString("F2") + ")";
+            sheet.Cells[2, 1].Style.Font.Italic = true;
+
             var legendItems = new (string Text, Color Color)[]
             {
                 ("Best Price (Better than DigiKey, Mouser, and Farnell)", Color.FromArgb(255, 232, 245, 233)),
@@ -210,12 +243,12 @@ namespace BOMVIEW.Services
             };
 
             // Add legend items
-            sheet.Cells[3, 1].Value = "Color Coding:";
-            sheet.Cells[3, 1].Style.Font.Bold = true;
+            sheet.Cells[4, 1].Value = "Color Coding:";
+            sheet.Cells[4, 1].Style.Font.Bold = true;
 
             for (int i = 0; i < legendItems.Length; i++)
             {
-                var row = i + 4;
+                var row = i + 5;
                 sheet.Cells[row, 2].Value = legendItems[i].Text;
                 sheet.Cells[row, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
                 sheet.Cells[row, 2].Style.Fill.BackgroundColor.SetColor(legendItems[i].Color);

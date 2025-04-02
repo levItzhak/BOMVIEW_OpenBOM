@@ -592,6 +592,45 @@ ToolTip="Toggle action buttons visibility">
                             
                             
                         </StackPanel>
+                        
+                        <!-- Exchange Rate Panel - Add this new panel in Column 4 (Flexible space) -->
+                        <StackPanel Grid.Column="4" 
+                                    Orientation="Horizontal" 
+                                    HorizontalAlignment="Right" 
+                                    VerticalAlignment="Center">
+                            <Border Background="#ECFDF5" 
+                                    Padding="12,8" 
+                                    CornerRadius="8" 
+                                    Margin="0,0,16,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="USD/ILS:" 
+                                               FontWeight="SemiBold" 
+                                               FontSize="13" 
+                                               Foreground="#065F46" 
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtExchangeRate" 
+                                               Text="3.60" 
+                                               FontWeight="Bold" 
+                                               FontSize="13" 
+                                               Foreground="#059669" 
+                                               Margin="6,0,0,0" 
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="₪" 
+                                               FontWeight="SemiBold" 
+                                               FontSize="13" 
+                                               Foreground="#059669" 
+                                               Margin="2,0,0,0" 
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtExchangeRateTimestamp" 
+                                               Text="(refreshed)" 
+                                               FontSize="10" 
+                                               Foreground="#059669" 
+                                               Margin="6,0,0,0" 
+                                               VerticalAlignment="Center" 
+                                               Opacity="0.8"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </Grid>
                 </Border>
                 <!-- Main content with search and collapsible action buttons -->
@@ -1211,8 +1250,8 @@ ToolTip="Toggle action buttons visibility">
                                 </Style>
                             </DataGridTextColumn.CellStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="DK-IL Unit Price (₪)" 
-                      Binding="{Binding IsraelUnitPrice, StringFormat=N2}" 
+                        <DataGridTextColumn Header="DK-IL Unit Price ($)" 
+                      Binding="{Binding IsraelUnitPrice, StringFormat=C5}" 
                       Width="130">
                             <DataGridTextColumn.CellStyle>
                                 <Style TargetType="DataGridCell" 
@@ -1227,8 +1266,8 @@ ToolTip="Toggle action buttons visibility">
                                 </Style>
                             </DataGridTextColumn.CellStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="DK-IL Total Price (₪)" 
-                      Binding="{Binding IsraelCurrentTotalPrice, StringFormat=N2}" 
+                        <DataGridTextColumn Header="DK-IL Total Price ($)" 
+                      Binding="{Binding IsraelCurrentTotalPrice, StringFormat=C5}" 
                       Width="130">
                             <DataGridTextColumn.CellStyle>
                                 <Style TargetType="DataGridCell" 
@@ -1589,16 +1628,10 @@ ToolTip="Toggle action buttons visibility">
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Unit Total:" Margin="0,0,8,4"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1">
-                                            <Run Text="₪"/>
-                                            <Run Text="{Binding Totals.IsraelUnitTotal, StringFormat=N2}"/>
-                                        </TextBlock>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Totals.IsraelUnitTotal, StringFormat=C2}" FontWeight="SemiBold"/>
 
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Price:" Margin="0,0,8,4"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1">
-                                            <Run Text="₪"/>
-                                            <Run Text="{Binding Totals.IsraelTotalPrice, StringFormat=N2}"/>
-                                        </TextBlock>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Totals.IsraelTotalPrice, StringFormat=C2}" FontWeight="SemiBold"/>
 
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Missing:" Margin="0,0,8,0"/>
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Totals.IsraelMissingCount}" Foreground="{StaticResource ErrorBrush}" FontWeight="SemiBold"/>
