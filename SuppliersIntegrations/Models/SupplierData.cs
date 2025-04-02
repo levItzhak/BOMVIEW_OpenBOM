@@ -22,6 +22,7 @@
         public string DigiKeyPartNumber { get; set; }
         public string MouserPartNumber { get; set; }
         public string FarnellPartNumber { get; set; }
+        public string IsraelPartNumber { get; set; }
         public string Supplier { get; set; }
         public string PartNumber { get; set; }
 

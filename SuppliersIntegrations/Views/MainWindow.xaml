@@ -44,6 +44,9 @@
             <local:SupplierToColorConverter.FarnellBrush>
                 <SolidColorBrush Color="#FFF3E0" Opacity="0.7"/>
             </local:SupplierToColorConverter.FarnellBrush>
+            <local:SupplierToColorConverter.IsraelBrush>
+                <SolidColorBrush Color="#E8EAF6" Opacity="0.7"/>
+            </local:SupplierToColorConverter.IsraelBrush>
             <local:SupplierToColorConverter.DefaultBrush>
                 <SolidColorBrush Color="Transparent"/>
             </local:SupplierToColorConverter.DefaultBrush>
@@ -291,6 +294,22 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Israel Column Style -->
+        <Style x:Key="IsraelColumnStyle" TargetType="DataGridCell">
+            <Setter Property="Background" Value="#E8EAF6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsraelData.IsAvailable}" Value="False">
+                    <Setter Property="Background" Value="#FFEBEE"/>
+                </DataTrigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#3949AB"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Combined Row Style for duplicate/out-of-stock handling -->
         <Style x:Key="CombinedRowStyle" TargetType="DataGridRow">
             <Setter Property="Background" Value="Transparent"/>
@@ -310,6 +329,7 @@
                         <Condition Binding="{Binding DigiKeyData.IsAvailable}" Value="False"/>
                         <Condition Binding="{Binding MouserData.IsAvailable}" Value="False"/>
                         <Condition Binding="{Binding FarnellData.IsAvailable}" Value="False"/>
+                        <Condition Binding="{Binding IsraelData.IsAvailable}" Value="False"/>
                     </MultiDataTrigger.Conditions>
                     <Setter Property="Background" Value="#FFEBEE"/>
                     <Setter Property="ToolTip" Value="Product out of stock at all suppliers"/>
@@ -325,6 +345,7 @@
                     <MultiDataTrigger.Conditions>
                         <Condition Binding="{Binding DigiKeyData.IsAvailable}" Value="False"/>
                         <Condition Binding="{Binding MouserData.IsAvailable}" Value="False"/>
+                        <Condition Binding="{Binding IsraelData.IsAvailable}" Value="False"/>
                     </MultiDataTrigger.Conditions>
                     <Setter Property="Background" Value="#FFEBEE"/>
                 </MultiDataTrigger>
@@ -1173,6 +1194,72 @@ ToolTip="Toggle action buttons visibility">
                             </DataGridTextColumn.CellStyle>
                         </DataGridTextColumn>
 
+                        <!-- Israel Columns -->
+                        <DataGridTextColumn Header="DK-IL Order QTY" 
+                      Binding="{Binding IsraelOrderQuantity, UpdateSourceTrigger=PropertyChanged}" 
+                      Width="110">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" 
+                   BasedOn="{StaticResource IsraelColumnStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasExternalSupplier}" Value="True">
+                                            <Setter Property="Background" Value="#E9D5FF"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="ToolTip" Value="External Supplier"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="DK-IL Unit Price (₪)" 
+                      Binding="{Binding IsraelUnitPrice, StringFormat=N2}" 
+                      Width="130">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" 
+                   BasedOn="{StaticResource IsraelColumnStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasExternalSupplier}" Value="True">
+                                            <Setter Property="Background" Value="#E9D5FF"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="ToolTip" Value="External Supplier"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="DK-IL Total Price (₪)" 
+                      Binding="{Binding IsraelCurrentTotalPrice, StringFormat=N2}" 
+                      Width="130">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" 
+                   BasedOn="{StaticResource IsraelColumnStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasExternalSupplier}" Value="True">
+                                            <Setter Property="Background" Value="#E9D5FF"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="ToolTip" Value="External Supplier"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="DK-IL Stock" 
+                      Binding="{Binding IsraelData.Availability}" 
+                      Width="110">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" 
+                   BasedOn="{StaticResource IsraelColumnStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasExternalSupplier}" Value="True">
+                                            <Setter Property="Background" Value="#E9D5FF"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="ToolTip" Value="External Supplier"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+
                         <!-- Mouser Data -->
                         <DataGridTextColumn Header="MS Order QTY" 
                       Binding="{Binding MouserOrderQuantity}" 
@@ -1307,14 +1394,14 @@ ToolTip="Toggle action buttons visibility">
 
                         <!-- Best Supplier -->
                         <DataGridTextColumn Header="Best Supplier" 
-              Binding="{Binding BestCurrentSupplier}" 
-              Width="150">
+                      Binding="{Binding BestCurrentSupplier}" 
+                      Width="150">
                             <DataGridTextColumn.CellStyle>
                                 <Style TargetType="DataGridCell">
                                     <Setter Property="Background">
                                         <Setter.Value>
                                             <Binding Path="BestCurrentSupplier" 
-                       Converter="{StaticResource SupplierToColorConverter}"/>
+                           Converter="{StaticResource SupplierToColorConverter}"/>
                                         </Setter.Value>
                                     </Setter>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
@@ -1472,6 +1559,49 @@ ToolTip="Toggle action buttons visibility">
 
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Missing:" Margin="0,0,8,0"/>
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Totals.FarnellMissingCount}" Foreground="{StaticResource ErrorBrush}" FontWeight="SemiBold"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Israel Totals -->
+                            <Border Background="White" 
+                            CornerRadius="8" 
+                            Padding="16" 
+                            Margin="0,0,16,8"
+                            BorderBrush="#E8EAF6" 
+                            BorderThickness="2"
+                            Width="220"
+                            Height="125">
+                                <StackPanel>
+                                    <TextBlock Text="DigiKey Israel" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="14"
+                                       Foreground="#3949AB"/>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Unit Total:" Margin="0,0,8,4"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1">
+                                            <Run Text="₪"/>
+                                            <Run Text="{Binding Totals.IsraelUnitTotal, StringFormat=N2}"/>
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Price:" Margin="0,0,8,4"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1">
+                                            <Run Text="₪"/>
+                                            <Run Text="{Binding Totals.IsraelTotalPrice, StringFormat=N2}"/>
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Missing:" Margin="0,0,8,0"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Totals.IsraelMissingCount}" Foreground="{StaticResource ErrorBrush}" FontWeight="SemiBold"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>

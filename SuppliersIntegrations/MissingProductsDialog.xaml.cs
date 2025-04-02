@@ -15,6 +15,7 @@ namespace BOMVIEW
         private readonly ISupplierService _digiKeyService;
         private readonly ISupplierService _mouserService;
         private readonly ISupplierService _farnellService;
+        private readonly ISupplierService _israelService;
         private readonly MainWindow _mainWindow;
         private readonly ILogger _logger;
         private readonly ExternalSupplierService _externalSupplierService;
@@ -30,6 +31,7 @@ namespace BOMVIEW
       ISupplierService digiKeyService,
       ISupplierService mouserService,
       ISupplierService farnellService,
+      ISupplierService israelService,
       ExternalSupplierService externalSupplierService,
       ILogger logger)
         {
@@ -38,6 +40,7 @@ namespace BOMVIEW
             _digiKeyService = digiKeyService;
             _mouserService = mouserService;
             _farnellService = farnellService;
+            _israelService = israelService;
             _externalSupplierService = externalSupplierService;
             _logger = logger;
 
@@ -60,25 +63,42 @@ namespace BOMVIEW
                 bool isDigiKeyMissing = !(entry.DigiKeyData?.IsAvailable ?? false);
                 bool isMouserMissing = !(entry.MouserData?.IsAvailable ?? false);
                 bool isFarnellMissing = !(entry.FarnellData?.IsAvailable ?? false);
+                bool isIsraelMissing = !(entry.IsraelData?.IsAvailable ?? false);
 
-                if (isDigiKeyMissing || isMouserMissing || isFarnellMissing)
+                if (isDigiKeyMissing || isMouserMissing || isFarnellMissing || isIsraelMissing)
                 {
                     // Determine which suppliers are missing
                     string missingFrom;
-                    if (isDigiKeyMissing && isMouserMissing && isFarnellMissing)
+                    if (isDigiKeyMissing && isMouserMissing && isFarnellMissing && isIsraelMissing)
                         missingFrom = "All";
+                    else if (isDigiKeyMissing && isMouserMissing && isFarnellMissing)
+                        missingFrom = "DigiKey & Mouser & Farnell";
+                    else if (isDigiKeyMissing && isMouserMissing && isIsraelMissing)
+                        missingFrom = "DigiKey & Mouser & Israel";
+                    else if (isDigiKeyMissing && isFarnellMissing && isIsraelMissing)
+                        missingFrom = "DigiKey & Farnell & Israel";
+                    else if (isMouserMissing && isFarnellMissing && isIsraelMissing)
+                        missingFrom = "Mouser & Farnell & Israel";
                     else if (isDigiKeyMissing && isMouserMissing)
                         missingFrom = "DigiKey & Mouser";
                     else if (isDigiKeyMissing && isFarnellMissing)
                         missingFrom = "DigiKey & Farnell";
+                    else if (isDigiKeyMissing && isIsraelMissing)
+                        missingFrom = "DigiKey & Israel";
                     else if (isMouserMissing && isFarnellMissing)
                         missingFrom = "Mouser & Farnell";
+                    else if (isMouserMissing && isIsraelMissing)
+                        missingFrom = "Mouser & Israel";
+                    else if (isFarnellMissing && isIsraelMissing)
+                        missingFrom = "Farnell & Israel";
                     else if (isDigiKeyMissing)
                         missingFrom = "DigiKey";
                     else if (isMouserMissing)
                         missingFrom = "Mouser";
-                    else
+                    else if (isFarnellMissing)
                         missingFrom = "Farnell";
+                    else
+                        missingFrom = "Israel";
 
                     var missingProduct = new MissingProductViewModel
                     {
@@ -143,6 +163,11 @@ namespace BOMVIEW
                 {
                     mainEntry.FarnellData = await _farnellService.GetPriceAndAvailabilityAsync(newOrderingCode);
                 }
+                
+                if (missingProduct.MissingFrom.Contains("Israel") || missingProduct.MissingFrom == "All")
+                {
+                    mainEntry.IsraelData = await _israelService.GetPriceAndAvailabilityAsync(newOrderingCode);
+                }
 
                 // Update price information
                 await _mainWindow.UpdatePriceInformation(mainEntry);
@@ -151,13 +176,30 @@ namespace BOMVIEW
                 bool isDigiKeyMissing = !(mainEntry.DigiKeyData?.IsAvailable ?? false);
                 bool isMouserMissing = !(mainEntry.MouserData?.IsAvailable ?? false);
                 bool isFarnellMissing = !(mainEntry.FarnellData?.IsAvailable ?? false);
+                bool isIsraelMissing = !(mainEntry.IsraelData?.IsAvailable ?? false);
 
                 // Update the missing products list
                 bool isStillMissing = false;
 
                 if (missingProduct.MissingFrom == "All")
                 {
+                    isStillMissing = isDigiKeyMissing && isMouserMissing && isFarnellMissing && isIsraelMissing;
+                }
+                else if (missingProduct.MissingFrom == "DigiKey & Mouser & Farnell")
+                {
                     isStillMissing = isDigiKeyMissing && isMouserMissing && isFarnellMissing;
+                }
+                else if (missingProduct.MissingFrom == "DigiKey & Mouser & Israel")
+                {
+                    isStillMissing = isDigiKeyMissing && isMouserMissing && isIsraelMissing;
+                }
+                else if (missingProduct.MissingFrom == "DigiKey & Farnell & Israel")
+                {
+                    isStillMissing = isDigiKeyMissing && isFarnellMissing && isIsraelMissing;
+                }
+                else if (missingProduct.MissingFrom == "Mouser & Farnell & Israel")
+                {
+                    isStillMissing = isMouserMissing && isFarnellMissing && isIsraelMissing;
                 }
                 else if (missingProduct.MissingFrom == "DigiKey & Mouser")
                 {
@@ -167,9 +209,21 @@ namespace BOMVIEW
                 {
                     isStillMissing = isDigiKeyMissing && isFarnellMissing;
                 }
+                else if (missingProduct.MissingFrom == "DigiKey & Israel")
+                {
+                    isStillMissing = isDigiKeyMissing && isIsraelMissing;
+                }
                 else if (missingProduct.MissingFrom == "Mouser & Farnell")
                 {
                     isStillMissing = isMouserMissing && isFarnellMissing;
+                }
+                else if (missingProduct.MissingFrom == "Mouser & Israel")
+                {
+                    isStillMissing = isMouserMissing && isIsraelMissing;
+                }
+                else if (missingProduct.MissingFrom == "Farnell & Israel")
+                {
+                    isStillMissing = isFarnellMissing && isIsraelMissing;
                 }
                 else if (missingProduct.MissingFrom == "DigiKey")
                 {
@@ -182,6 +236,10 @@ namespace BOMVIEW
                 else if (missingProduct.MissingFrom == "Farnell")
                 {
                     isStillMissing = isFarnellMissing;
+                }
+                else if (missingProduct.MissingFrom == "Israel")
+                {
+                    isStillMissing = isIsraelMissing;
                 }
 
                 if (!isStillMissing)
@@ -256,7 +314,7 @@ namespace BOMVIEW
                         if (mainEntry == null) continue;
 
                         // Get the new ordering code that was entered in the dialog
-                        string newOrderingCode = product.OrderingCode;
+                        string newOrderingCode = product.OrderingCode.Trim();
                         if (string.IsNullOrWhiteSpace(newOrderingCode) || newOrderingCode == product.OriginalOrderingCode)
                         {
                             continue; // Skip if no new code was entered
@@ -265,7 +323,7 @@ namespace BOMVIEW
                         // Update the main entry's ordering code
                         mainEntry.OrderingCode = newOrderingCode;
 
-                        // Fetch new data based on which supplier was missing using the NEW ordering code
+                        // Fetch new data based on which supplier was missing
                         if (product.MissingFrom.Contains("DigiKey") || product.MissingFrom == "All")
                         {
                             mainEntry.DigiKeyData =
@@ -283,6 +341,12 @@ namespace BOMVIEW
                             mainEntry.FarnellData =
                                 await _farnellService.GetPriceAndAvailabilityAsync(newOrderingCode);
                         }
+                        
+                        if (product.MissingFrom.Contains("Israel") || product.MissingFrom == "All")
+                        {
+                            mainEntry.IsraelData =
+                                await _israelService.GetPriceAndAvailabilityAsync(newOrderingCode);
+                        }
 
                         // Update price information
                         await _mainWindow.UpdatePriceInformation(mainEntry);
@@ -291,13 +355,30 @@ namespace BOMVIEW
                         bool isDigiKeyMissing = !(mainEntry.DigiKeyData?.IsAvailable ?? false);
                         bool isMouserMissing = !(mainEntry.MouserData?.IsAvailable ?? false);
                         bool isFarnellMissing = !(mainEntry.FarnellData?.IsAvailable ?? false);
+                        bool isIsraelMissing = !(mainEntry.IsraelData?.IsAvailable ?? false);
 
                         // Determine if product is still missing based on the original missing status
                         bool isStillMissing = false;
 
                         if (product.MissingFrom == "All")
                         {
+                            isStillMissing = isDigiKeyMissing && isMouserMissing && isFarnellMissing && isIsraelMissing;
+                        }
+                        else if (product.MissingFrom == "DigiKey & Mouser & Farnell")
+                        {
                             isStillMissing = isDigiKeyMissing && isMouserMissing && isFarnellMissing;
+                        }
+                        else if (product.MissingFrom == "DigiKey & Mouser & Israel")
+                        {
+                            isStillMissing = isDigiKeyMissing && isMouserMissing && isIsraelMissing;
+                        }
+                        else if (product.MissingFrom == "DigiKey & Farnell & Israel")
+                        {
+                            isStillMissing = isDigiKeyMissing && isFarnellMissing && isIsraelMissing;
+                        }
+                        else if (product.MissingFrom == "Mouser & Farnell & Israel")
+                        {
+                            isStillMissing = isMouserMissing && isFarnellMissing && isIsraelMissing;
                         }
                         else if (product.MissingFrom == "DigiKey & Mouser")
                         {
@@ -307,9 +388,21 @@ namespace BOMVIEW
                         {
                             isStillMissing = isDigiKeyMissing && isFarnellMissing;
                         }
+                        else if (product.MissingFrom == "DigiKey & Israel")
+                        {
+                            isStillMissing = isDigiKeyMissing && isIsraelMissing;
+                        }
                         else if (product.MissingFrom == "Mouser & Farnell")
                         {
                             isStillMissing = isMouserMissing && isFarnellMissing;
+                        }
+                        else if (product.MissingFrom == "Mouser & Israel")
+                        {
+                            isStillMissing = isMouserMissing && isIsraelMissing;
+                        }
+                        else if (product.MissingFrom == "Farnell & Israel")
+                        {
+                            isStillMissing = isFarnellMissing && isIsraelMissing;
                         }
                         else if (product.MissingFrom == "DigiKey")
                         {
@@ -322,6 +415,10 @@ namespace BOMVIEW
                         else if (product.MissingFrom == "Farnell")
                         {
                             isStillMissing = isFarnellMissing;
+                        }
+                        else if (product.MissingFrom == "Israel")
+                        {
+                            isStillMissing = isIsraelMissing;
                         }
 
                         // Remove from missing products if now available
@@ -416,6 +513,28 @@ namespace BOMVIEW
             try
             {
                 var url = $"https://il.farnell.com/search?st={Uri.EscapeDataString(product.OrderingCode)}";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening link: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void IsraelLink_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var product = button?.DataContext as MissingProductViewModel;
+            if (product == null) return;
+
+            try
+            {
+                var url = $"https://www.digikey.co.il/en/products/result?keywords={Uri.EscapeDataString(product.OrderingCode)}";
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = url,

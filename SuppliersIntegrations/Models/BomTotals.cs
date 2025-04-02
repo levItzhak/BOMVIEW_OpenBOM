@@ -12,11 +12,14 @@ namespace BOMVIEW.Models
         private decimal _mouserTotalPrice;
         private decimal _farnellUnitTotal;
         private decimal _farnellTotalPrice;
+        private decimal _israelUnitTotal;
+        private decimal _israelTotalPrice;
         private decimal _bestSupplierTotal;
         private decimal _bestSupplierNextBreakTotal;
         private int _digiKeyMissingCount;
         private int _mouserMissingCount;
         private int _farnellMissingCount;
+        private int _israelMissingCount;
         private int _bestSupplierMissingCount;
         private int _duplicateCount;
 
@@ -56,6 +59,18 @@ namespace BOMVIEW.Models
             set { _farnellTotalPrice = value; OnPropertyChanged(); }
         }
 
+        public decimal IsraelUnitTotal
+        {
+            get => _israelUnitTotal;
+            set { _israelUnitTotal = value; OnPropertyChanged(); }
+        }
+
+        public decimal IsraelTotalPrice
+        {
+            get => _israelTotalPrice;
+            set { _israelTotalPrice = value; OnPropertyChanged(); }
+        }
+
         public decimal BestSupplierTotal
         {
             get => _bestSupplierTotal;
@@ -84,6 +99,12 @@ namespace BOMVIEW.Models
         {
             get => _farnellMissingCount;
             set { _farnellMissingCount = value; OnPropertyChanged(); }
+        }
+
+        public int IsraelMissingCount
+        {
+            get => _israelMissingCount;
+            set { _israelMissingCount = value; OnPropertyChanged(); }
         }
 
         public int BestSupplierMissingCount

@@ -157,6 +157,11 @@
                             Style="{StaticResource LinkButton}"
                             Margin="0,0,2,0"
                             ToolTip="Open in Farnell"/>
+                                <Button Content="IL "
+                            Click="IsraelLink_Click"
+                            Style="{StaticResource LinkButton}"
+                            Margin="0,0,2,0"
+                            ToolTip="Open in Israel"/>
                                 <Button Click="ExternalSupplierButton_Click"
                             Style="{StaticResource LinkButton}"
                             ToolTip="Add External Supplier"

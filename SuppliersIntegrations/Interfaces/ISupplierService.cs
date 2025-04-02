@@ -24,7 +24,8 @@ namespace BOMVIEW.Interfaces
     {
         DigiKey,
         Mouser,
-        Farnell
+        Farnell,
+        Israel
     }
 
 

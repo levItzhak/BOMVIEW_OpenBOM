@@ -10,6 +10,7 @@ namespace BOMVIEW
         public SolidColorBrush DigiKeyBrush { get; set; }
         public SolidColorBrush MouserBrush { get; set; }
         public SolidColorBrush FarnellBrush { get; set; }
+        public SolidColorBrush IsraelBrush { get; set; }
         public SolidColorBrush DefaultBrush { get; set; }
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -24,6 +25,9 @@ namespace BOMVIEW
                         return MouserBrush;
                     case "Farnell":
                         return FarnellBrush;
+                    case "Israel":
+                    case "DK-IL":
+                        return IsraelBrush;
                     default:
                         return DefaultBrush;
                 }

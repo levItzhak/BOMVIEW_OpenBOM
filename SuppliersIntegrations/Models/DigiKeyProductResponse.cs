@@ -101,6 +101,9 @@ namespace BOMVIEW.Models
 
         [JsonPropertyName("MinimumOrderQuantity")]
         public int MinimumOrderQuantity { get; set; }
+
+        [JsonPropertyName("PackagingType")]
+        public string PackagingType { get; set; }
     }
 
     public class DigiKeyStandardPricing

@@ -7,6 +7,7 @@ using System.Text.Json;
 using BOMVIEW.Exceptions;
 using System.Text;
 using System.Reflection;
+using System.Linq;
 
 public class DigiKeyService : BaseSupplierService, ISupplierService
 {
@@ -134,17 +135,60 @@ public class DigiKeyService : BaseSupplierService, ISupplierService
             }
 
             string digiKeyPartNumber = "";
-            if (digiKeyResponse.Product?.ProductVariations != null)
+            DigiKeyProductVariation selectedVariation = null;
+
+            if (digiKeyResponse.Product?.ProductVariations != null && digiKeyResponse.Product.ProductVariations.Any())
             {
-                // Check if there are at least 2 variations and get the second one ([1])
-                if (digiKeyResponse.Product.ProductVariations.Count >= 2)
+                // Log product variations to assist with debugging
+                _logger.LogInfo($"Found {digiKeyResponse.Product.ProductVariations.Count} product variations for {partNumber}");
+                foreach (var variation in digiKeyResponse.Product.ProductVariations)
                 {
-                    digiKeyPartNumber = digiKeyResponse.Product.ProductVariations[1].DigiKeyProductNumber;
+                    _logger.LogInfo($"Variation: {variation.DigiKeyProductNumber}, " +
+                                    $"PackageType: {variation.PackagingType ?? "Unknown"}, " +
+                                    $"MOQ: {variation.MinimumOrderQuantity}, " +
+                                    $"Qty Available: {variation.QuantityAvailableforPackageType}, " +
+                                    $"Price Breaks: {(variation.StandardPricing?.Count ?? 0)}");
+                    
+                    // Log the price breaks for each variation to help with debugging
+                    if (variation.StandardPricing != null && variation.StandardPricing.Any())
+                    {
+                        foreach (var priceBreak in variation.StandardPricing)
+                        {
+                            _logger.LogInfo($"  Price Break: Qty {priceBreak.BreakQuantity}, Unit Price {priceBreak.UnitPrice:C}");
+                        }
+                    }
                 }
-                // Fallback to the first one if there's only one variation
-                else if (digiKeyResponse.Product.ProductVariations.Any())
+
+                // Try to find the Cut Tape (CT) variation first
+                // In DigiKey API, CT products often have "CT" in their name or have a specific packaging type identifier
+                selectedVariation = digiKeyResponse.Product.ProductVariations
+                    .FirstOrDefault(v => 
+                        (v.DigiKeyProductNumber != null && v.DigiKeyProductNumber.Contains("CT")) || 
+                        (v.PackagingType != null && (
+                            v.PackagingType.Contains("Cut Tape") || 
+                            v.PackagingType.Contains("CT") || 
+                            v.PackagingType.Contains("Tape & Reel (Cut Tape)")
+                        )) ||
+                        (v.MinimumOrderQuantity <= 10)); // Cut Tape typically has lower MOQ
+                        
+                // If no CT variation found, use the one with the lowest MOQ (which is likely CT or similar small quantity option)
+                if (selectedVariation == null)
                 {
-                    digiKeyPartNumber = digiKeyResponse.Product.ProductVariations[0].DigiKeyProductNumber;
+                    selectedVariation = digiKeyResponse.Product.ProductVariations
+                        .OrderBy(v => v.MinimumOrderQuantity)
+                        .FirstOrDefault();
+                }
+
+                // If still no selection, just use the first one (this is the original behavior as fallback)
+                if (selectedVariation == null && digiKeyResponse.Product.ProductVariations.Any())
+                {
+                    selectedVariation = digiKeyResponse.Product.ProductVariations[0];
+                }
+
+                if (selectedVariation != null)
+                {
+                    digiKeyPartNumber = selectedVariation.DigiKeyProductNumber;
+                    _logger.LogInfo($"Selected variation: {digiKeyPartNumber} with MOQ: {selectedVariation.MinimumOrderQuantity}");
                 }
             }
 
@@ -166,8 +210,8 @@ public class DigiKeyService : BaseSupplierService, ISupplierService
                     Name = p.ParameterText,
                     Value = p.ValueText
                 }).ToList() ?? new List<DigiKeyParameterInfo>(),
-                PriceBreaks = digiKeyResponse.Product.ProductVariations?
-                    .FirstOrDefault()?.StandardPricing?
+                // Use the selected variation's price breaks instead of always using the first one
+                PriceBreaks = selectedVariation?.StandardPricing?
                     .Select(p => new PriceBreak
                     {
                         Quantity = p.BreakQuantity,

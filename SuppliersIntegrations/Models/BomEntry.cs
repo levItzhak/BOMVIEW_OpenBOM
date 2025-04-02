@@ -31,6 +31,18 @@ namespace BOMVIEW.Models
         private int _farnellOrderQuantity;
         private bool _hasExternalSupplier;
 
+        // Adding Israel-specific fields
+        private SupplierData _israelData;
+        private decimal _israelCurrentUnitPrice;
+        private decimal _israelCurrentTotalPrice;
+        private int _israelNextBreakQty;
+        private decimal _israelNextBreakUnitPrice;
+        private decimal _israelNextBreakTotalPrice;
+        private string _israelProductUrl;
+        private decimal _israelUnitPrice;
+        private int _israelOrderQuantity;
+        private string _israelPartNumber;
+
         // Supplier data
         private SupplierData _digiKeyData;
         private SupplierData _mouserData;
@@ -154,6 +166,49 @@ namespace BOMVIEW.Models
                 FarnellNextBreakUnitPrice = farnellPricing.nextBreakPrice;
                 FarnellNextBreakTotalPrice = farnellPricing.nextBreakPrice * FarnellOrderQuantity;
             }
+
+            if (IsraelData != null)
+            {
+                var israelPricing = IsraelData.GetPriceForQuantity(IsraelOrderQuantity);
+                IsraelCurrentUnitPrice = israelPricing.currentPrice;
+                IsraelUnitPrice = israelPricing.currentPrice; // Just the currentPrice, without multiplying by QuantityForOne
+                IsraelCurrentTotalPrice = israelPricing.currentPrice * IsraelOrderQuantity;
+                IsraelNextBreakQty = israelPricing.nextBreakQuantity;
+                IsraelNextBreakUnitPrice = israelPricing.nextBreakPrice;
+                IsraelNextBreakTotalPrice = israelPricing.nextBreakPrice * IsraelOrderQuantity;
+            }
+
+            // Now, determine the best supplier based on lowest price
+            decimal lowestPrice = decimal.MaxValue;
+            string bestSupplier = "";
+
+            if (DigiKeyData?.IsAvailable == true && DigiKeyCurrentTotalPrice > 0 && DigiKeyCurrentTotalPrice < lowestPrice)
+            {
+                lowestPrice = DigiKeyCurrentTotalPrice;
+                bestSupplier = "DigiKey";
+            }
+
+            if (MouserData?.IsAvailable == true && MouserCurrentTotalPrice > 0 && MouserCurrentTotalPrice < lowestPrice)
+            {
+                lowestPrice = MouserCurrentTotalPrice;
+                bestSupplier = "Mouser";
+            }
+
+            if (FarnellData?.IsAvailable == true && FarnellCurrentTotalPrice > 0 && FarnellCurrentTotalPrice < lowestPrice)
+            {
+                lowestPrice = FarnellCurrentTotalPrice;
+                bestSupplier = "Farnell";
+            }
+
+            if (IsraelData?.IsAvailable == true && IsraelCurrentTotalPrice > 0 && IsraelCurrentTotalPrice < lowestPrice)
+            {
+                lowestPrice = IsraelCurrentTotalPrice;
+                bestSupplier = "Israel";
+            }
+
+            BestCurrentSupplier = bestSupplier;
+            CurrentUnitPrice = lowestPrice;
+            CurrentTotalPrice = lowestPrice;
         }
 
 
@@ -512,7 +567,7 @@ namespace BOMVIEW.Models
                 DigiKeyOrderQuantity = this.DigiKeyOrderQuantity,
                 MouserOrderQuantity = this.MouserOrderQuantity,
                 StockQuantity = this.StockQuantity,
-                 FarnellData = this.FarnellData,
+                FarnellData = this.FarnellData,
                 FarnellUnitPrice = this.FarnellUnitPrice,
                 FarnellOrderQuantity = this.FarnellOrderQuantity,
                 FarnellCurrentUnitPrice = this.FarnellCurrentUnitPrice,
@@ -521,9 +576,86 @@ namespace BOMVIEW.Models
                 FarnellNextBreakUnitPrice = this.FarnellNextBreakUnitPrice,
                 FarnellNextBreakTotalPrice = this.FarnellNextBreakTotalPrice,
                 FarnellProductUrl = this.FarnellProductUrl,
-                 HasExternalSupplier = this.HasExternalSupplier
-
+                HasExternalSupplier = this.HasExternalSupplier,
+                // Add Israel properties
+                IsraelData = this.IsraelData,
+                IsraelUnitPrice = this.IsraelUnitPrice,
+                IsraelOrderQuantity = this.IsraelOrderQuantity,
+                IsraelCurrentUnitPrice = this.IsraelCurrentUnitPrice,
+                IsraelCurrentTotalPrice = this.IsraelCurrentTotalPrice,
+                IsraelNextBreakQty = this.IsraelNextBreakQty,
+                IsraelNextBreakUnitPrice = this.IsraelNextBreakUnitPrice,
+                IsraelNextBreakTotalPrice = this.IsraelNextBreakTotalPrice,
+                IsraelProductUrl = this.IsraelProductUrl,
+                IsraelPartNumber = this.IsraelPartNumber
             };
+        }
+
+        // Israel-specific properties
+        public SupplierData IsraelData
+        {
+            get => _israelData;
+            set { _israelData = value; OnPropertyChanged(); }
+        }
+
+        public decimal IsraelCurrentUnitPrice
+        {
+            get => _israelCurrentUnitPrice;
+            set { _israelCurrentUnitPrice = value; OnPropertyChanged(); }
+        }
+
+        public decimal IsraelCurrentTotalPrice
+        {
+            get => _israelCurrentTotalPrice;
+            set { _israelCurrentTotalPrice = value; OnPropertyChanged(); }
+        }
+
+        public int IsraelNextBreakQty
+        {
+            get => _israelNextBreakQty;
+            set { _israelNextBreakQty = value; OnPropertyChanged(); }
+        }
+
+        public decimal IsraelNextBreakUnitPrice
+        {
+            get => _israelNextBreakUnitPrice;
+            set { _israelNextBreakUnitPrice = value; OnPropertyChanged(); }
+        }
+
+        public decimal IsraelNextBreakTotalPrice
+        {
+            get => _israelNextBreakTotalPrice;
+            set { _israelNextBreakTotalPrice = value; OnPropertyChanged(); }
+        }
+
+        public string IsraelProductUrl
+        {
+            get => _israelProductUrl;
+            set { _israelProductUrl = value; OnPropertyChanged(); }
+        }
+
+        public decimal IsraelUnitPrice
+        {
+            get => _israelUnitPrice;
+            set { _israelUnitPrice = value; OnPropertyChanged(); }
+        }
+
+        public int IsraelOrderQuantity
+        {
+            get => _israelOrderQuantity;
+            set
+            {
+                _israelOrderQuantity = value;
+                OnPropertyChanged();
+                // Update related prices
+                UpdatePriceInformation();
+            }
+        }
+
+        public string IsraelPartNumber
+        {
+            get => _israelPartNumber;
+            set { _israelPartNumber = value; OnPropertyChanged(); }
         }
     }
 }

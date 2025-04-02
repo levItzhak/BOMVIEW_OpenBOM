@@ -88,7 +88,7 @@ namespace BOMVIEW.Services
                     Price = price,
                     Availability = availability,
                     IsAvailable = availability > 0,
-                    MouserPartNumber = part.MouserPartNumber,  
+                    MouserPartNumber = part.MouserPartNumber,
                     PriceBreaks = new List<PriceBreak>()
                 };
 

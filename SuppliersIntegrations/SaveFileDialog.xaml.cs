@@ -33,6 +33,8 @@ namespace BOMVIEW
                 new SaveFileOption { Name = "Mouser Best Prices", Key = "MouserBestPrices", IsSelected = true, Description = "Optimized parts list for Mouser with best pricing" },
                 new SaveFileOption { Name = "Farnell List", Key = "FarnellList", IsSelected = true, Description = "Complete parts list for ordering from Farnell" },
                 new SaveFileOption { Name = "Farnell Best Prices", Key = "FarnellBestPrices", IsSelected = true, Description = "Optimized parts list for Farnell with best pricing" },
+                new SaveFileOption { Name = "Israel List", Key = "IsraelList", IsSelected = true, Description = "Complete parts list for ordering from Israel" },
+                new SaveFileOption { Name = "Israel Best Prices", Key = "IsraelBestPrices", IsSelected = true, Description = "Optimized parts list for Israel with best pricing" },
                 new SaveFileOption { Name = "External Suppliers", Key = "ExternalSuppliers", IsSelected = true, Description = "List of parts from external suppliers" },
                 new SaveFileOption { Name = "Missing Parts", Key = "MissingParts", IsSelected = true, Description = "List of parts that are not available from any supplier" }
             };

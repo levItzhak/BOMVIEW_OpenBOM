@@ -58,6 +58,9 @@ Mapping,Designator,A,False
 Mapping,Value,B,False
 Mapping,PcbFootprint,C,False
 Mapping,QuantityForOne,D,True
-Template,LastUsedConfiguration,2,1,False
-Mapping,OrderingCode,A,True
-Mapping,QuantityForOne,D,True
+Template,LastUsedConfiguration,16,10,False
+Mapping,OrderingCode,I,True
+Mapping,QuantityForOne,B,True
+Mapping,Designator,C,True
+Mapping,Value,D,True
+Mapping,PcbFootprint,E,True

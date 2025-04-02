@@ -50,6 +50,8 @@ namespace BOMVIEW
         private ObservableCollection<string> _duplicateOrderingCodes = new ObservableCollection<string>();
         private readonly ExternalSupplierService _externalSupplierService;
         private readonly ExternalSupplierExporter _externalSupplierExporter;
+        private readonly ISupplierService _israelService;
+        private readonly IsraelExporter _israelExporter;
         public ObservableCollection<string> DuplicateOrderingCodes
         {
             get => _duplicateOrderingCodes;
@@ -115,7 +117,8 @@ namespace BOMVIEW
             _excelService = new ExcelService();
             _digiKeyService = new DigiKeyService(_logger, credentials);
             _mouserService = new MouserService(_logger, credentials);
-            _farnellService = new FarnellService(_logger, credentials);  // Add this line
+            _farnellService = new FarnellService(_logger, credentials);
+            _israelService = new IsraelService(_logger, credentials);
             _templateManager = new TemplateManager(_logger);
 
             _bomEntries = new ObservableCollection<BomEntry>();
@@ -126,7 +129,8 @@ namespace BOMVIEW
             // Initialize exporters
             _digiKeyExporter = new DigiKeyExporter(_logger, (DigiKeyService)_digiKeyService, _currentFilePath);
             _mouserExporter = new MouserExporter(_logger, (MouserService)_mouserService, _currentFilePath);
-            _farnellExporter = new FarnellExporter(_logger, (FarnellService)_farnellService, _currentFilePath);  // Add this line
+            _farnellExporter = new FarnellExporter(_logger, (FarnellService)_farnellService, _currentFilePath);
+            _israelExporter = new IsraelExporter(_logger, (IsraelService)_israelService, _currentFilePath);
             _externalSupplierService = new ExternalSupplierService(_logger);
             _externalSupplierExporter = new ExternalSupplierExporter(_logger, _externalSupplierService);
             // Load templates into the combo box
@@ -203,6 +207,13 @@ namespace BOMVIEW
             bomEntry.FarnellUnitPrice = unitPrice;
             bomEntry.FarnellCurrentTotalPrice = totalPrice;
             bomEntry.FarnellOrderQuantity = bomEntry.QuantityTotal;
+
+            // Apply to Israel
+            bomEntry.IsraelData = mockSupplierData;
+            bomEntry.IsraelCurrentUnitPrice = unitPrice;
+            bomEntry.IsraelUnitPrice = unitPrice;
+            bomEntry.IsraelCurrentTotalPrice = totalPrice;
+            bomEntry.IsraelOrderQuantity = bomEntry.QuantityTotal;
 
             // Set best supplier
             bomEntry.BestCurrentSupplier = $"External: {externalSupplier.SupplierName}";
@@ -568,6 +579,52 @@ namespace BOMVIEW
                     ResetFarnellPrices(entry);
                 }
 
+                // Israel optimization and pricing
+                if (entry.IsraelData?.IsAvailable ?? false)
+                {
+                    // Initial minimum quantity based on base price
+                    var israelBasePrice = entry.IsraelData.GetPriceForQuantity(entry.QuantityTotal);
+                    var israelMinQty = QuantityCalculator.CalculateMinimumOrderQuantity(
+                        israelBasePrice.currentPrice,
+                        entry.QuantityTotal
+                    );
+
+                    // Get optimized quantity considering price breaks
+                    var israelOptimized = QuantityCalculator.GetOptimizedQuantity(
+                        israelBasePrice.currentPrice,
+                        entry.QuantityTotal,
+                        israelBasePrice.nextBreakPrice,
+                        israelBasePrice.nextBreakQuantity
+                    );
+
+                    // Update Israel quantities and prices
+                    entry.IsraelOrderQuantity = israelOptimized.optimizedQuantity;
+                    var finalIsraelPricing = entry.IsraelData.GetPriceForQuantity(entry.IsraelOrderQuantity);
+
+                    entry.IsraelCurrentUnitPrice = finalIsraelPricing.currentPrice;
+                    // This should be the price for a single unit, not multiplied by QuantityForOne
+                    entry.IsraelUnitPrice = finalIsraelPricing.currentPrice;
+                    entry.IsraelCurrentTotalPrice = finalIsraelPricing.currentPrice * entry.IsraelOrderQuantity;
+
+                    if (finalIsraelPricing.nextBreakQuantity > 0)
+                    {
+                        var nextBreakOptimized = QuantityCalculator.GetOptimizedQuantity(
+                            finalIsraelPricing.nextBreakPrice,
+                            finalIsraelPricing.nextBreakQuantity,
+                            null,
+                            null
+                        );
+
+                        entry.IsraelNextBreakQty = nextBreakOptimized.optimizedQuantity;
+                        entry.IsraelNextBreakUnitPrice = finalIsraelPricing.nextBreakPrice;
+                        entry.IsraelNextBreakTotalPrice = finalIsraelPricing.nextBreakPrice * entry.IsraelNextBreakQty;
+                    }
+                }
+                else
+                {
+                    ResetIsraelPrices(entry);
+                }
+
                 // Determine best supplier based on optimized total prices
                 DetermineBestSupplier(entry);
                 UpdateTotals();
@@ -609,44 +666,69 @@ namespace BOMVIEW
             entry.FarnellNextBreakUnitPrice = 0;
             entry.FarnellNextBreakTotalPrice = 0;
         }
+
+        private void ResetIsraelPrices(BomEntry entry)
+        {
+            entry.IsraelOrderQuantity = entry.QuantityTotal;
+            entry.IsraelCurrentUnitPrice = 0;
+            entry.IsraelUnitPrice = 0;  // Reset the unit price properly
+            entry.IsraelCurrentTotalPrice = 0;
+            entry.IsraelNextBreakQty = 0;
+            entry.IsraelNextBreakUnitPrice = 0;
+            entry.IsraelNextBreakTotalPrice = 0;
+        }
+
         private void DetermineBestSupplier(BomEntry entry)
         {
-          bool digiKeyAvailable = (entry.DigiKeyData?.IsAvailable ?? false) && entry.DigiKeyCurrentTotalPrice > 0;
-    bool mouserAvailable = (entry.MouserData?.IsAvailable ?? false) && entry.MouserCurrentTotalPrice > 0;
-    bool farnellAvailable = (entry.FarnellData?.IsAvailable ?? false) && entry.FarnellCurrentTotalPrice > 0;
+            bool digiKeyAvailable = (entry.DigiKeyData?.IsAvailable ?? false) && entry.DigiKeyCurrentTotalPrice > 0;
+            bool mouserAvailable = (entry.MouserData?.IsAvailable ?? false) && entry.MouserCurrentTotalPrice > 0;
+            bool farnellAvailable = (entry.FarnellData?.IsAvailable ?? false) && entry.FarnellCurrentTotalPrice > 0;
+            bool israelAvailable = (entry.IsraelData?.IsAvailable ?? false) && entry.IsraelCurrentTotalPrice > 0;
 
-    // Create a list of available suppliers with their prices
-    var availableSuppliers = new List<(string supplier, decimal totalPrice)>();
+            // Create a list of available suppliers with their prices
+            var availableSuppliers = new List<(string supplier, decimal totalPrice)>();
 
-    if (digiKeyAvailable)
-        availableSuppliers.Add(("DigiKey", entry.DigiKeyCurrentTotalPrice));
+            if (digiKeyAvailable)
+                availableSuppliers.Add(("DigiKey", entry.DigiKeyCurrentTotalPrice));
 
-    if (mouserAvailable)
-        availableSuppliers.Add(("Mouser", entry.MouserCurrentTotalPrice));
+            if (mouserAvailable)
+                availableSuppliers.Add(("Mouser", entry.MouserCurrentTotalPrice));
 
-    if (farnellAvailable)
-        availableSuppliers.Add(("Farnell", entry.FarnellCurrentTotalPrice));
+            if (farnellAvailable)
+                availableSuppliers.Add(("Farnell", entry.FarnellCurrentTotalPrice));
+            
+            if (israelAvailable)
+                availableSuppliers.Add(("Israel", entry.IsraelCurrentTotalPrice));
 
-    if (availableSuppliers.Count > 0)
-    {
-        // Find the supplier with the lowest price
-        var bestSupplier = availableSuppliers.OrderBy(s => s.totalPrice).First();
+            if (availableSuppliers.Count > 0)
+            {
+                // Find the supplier with the lowest price
+                var bestSupplier = availableSuppliers.OrderBy(s => s.totalPrice).First();
 
-        entry.BestCurrentSupplier = bestSupplier.supplier;
-        entry.CurrentUnitPrice = GetCurrentUnitPrice(entry, bestSupplier.supplier);
-        entry.CurrentTotalPrice = bestSupplier.totalPrice;
+                entry.BestCurrentSupplier = bestSupplier.supplier;
+                entry.CurrentUnitPrice = GetCurrentUnitPrice(entry, bestSupplier.supplier);
+                entry.CurrentTotalPrice = bestSupplier.totalPrice;
 
                 // Determine best next break supplier
                 decimal digiKeyNextBreakPrice = digiKeyAvailable ? entry.DigiKeyNextBreakTotalPrice : decimal.MaxValue;
                 decimal mouserNextBreakPrice = mouserAvailable ? entry.MouserNextBreakTotalPrice : decimal.MaxValue;
                 decimal farnellNextBreakPrice = farnellAvailable ? entry.FarnellNextBreakTotalPrice : decimal.MaxValue;
+                decimal israelNextBreakPrice = israelAvailable ? entry.IsraelNextBreakTotalPrice : decimal.MaxValue;
 
-                if (digiKeyNextBreakPrice <= mouserNextBreakPrice && digiKeyNextBreakPrice <= farnellNextBreakPrice)
+                if (digiKeyNextBreakPrice <= mouserNextBreakPrice && 
+                    digiKeyNextBreakPrice <= farnellNextBreakPrice &&
+                    digiKeyNextBreakPrice <= israelNextBreakPrice)
                     entry.BestNextBreakSupplier = "DigiKey";
-                else if (mouserNextBreakPrice <= digiKeyNextBreakPrice && mouserNextBreakPrice <= farnellNextBreakPrice)
+                else if (mouserNextBreakPrice <= digiKeyNextBreakPrice && 
+                         mouserNextBreakPrice <= farnellNextBreakPrice &&
+                         mouserNextBreakPrice <= israelNextBreakPrice)
                     entry.BestNextBreakSupplier = "Mouser";
-                else
+                else if (farnellNextBreakPrice <= digiKeyNextBreakPrice && 
+                         farnellNextBreakPrice <= mouserNextBreakPrice &&
+                         farnellNextBreakPrice <= israelNextBreakPrice)
                     entry.BestNextBreakSupplier = "Farnell";
+                else
+                    entry.BestNextBreakSupplier = "Israel";
             }
             else
             {
@@ -664,6 +746,7 @@ namespace BOMVIEW
                 "DigiKey" => entry.DigiKeyCurrentUnitPrice,
                 "Mouser" => entry.MouserCurrentUnitPrice,
                 "Farnell" => entry.FarnellCurrentUnitPrice,
+                "Israel" => entry.IsraelCurrentUnitPrice,
                 _ => 0
             };
         }
@@ -683,6 +766,7 @@ namespace BOMVIEW
                 bool skipDigiKey = false;
                 bool skipMouser = false;
                 bool skipFarnell = false;
+                bool skipIsrael = false;
 
                 _cancellationTokenSource = new CancellationTokenSource();
 
@@ -711,6 +795,7 @@ namespace BOMVIEW
                         Task<SupplierData> digiKeyTask = null;
                         Task<SupplierData> mouserTask = null;
                         Task<SupplierData> farnellTask = null;
+                        Task<SupplierData> israelTask = null;
 
                         if (!skipDigiKey)
                         {
@@ -730,6 +815,12 @@ namespace BOMVIEW
                             tasks.Add(farnellTask);
                         }
 
+                        if (!skipIsrael)
+                        {
+                            israelTask = _israelService.GetPriceAndAvailabilityAsync(entry.OrderingCode);
+                            tasks.Add(israelTask);
+                        }
+
                         try
                         {
                             await Task.WhenAll(tasks);
@@ -740,14 +831,14 @@ namespace BOMVIEW
                                 entry.MouserData = await mouserTask;
                             if (!skipFarnell && farnellTask != null)
                                 entry.FarnellData = await farnellTask;
+                            if (!skipIsrael && israelTask != null)
+                                entry.IsraelData = await israelTask;
                         }
                         catch (RateLimitException rex)
                         {
                             var supplier = rex.Supplier;
                             string supplierName = supplier.ToString();
-                            string otherSuppliers = supplier == SupplierType.DigiKey ?
-                                "Mouser and Farnell" :
-                                (supplier == SupplierType.Mouser ? "DigiKey and Farnell" : "DigiKey and Mouser");
+                            string otherSuppliers = GetOtherSupplierString(supplier, skipDigiKey, skipMouser, skipFarnell, skipIsrael);
 
                             var message = $"Rate limit exceeded for {supplierName}. Do you want to continue with only {otherSuppliers}?";
 
@@ -770,10 +861,15 @@ namespace BOMVIEW
                                     skipMouser = true;
                                     _logger.LogWarning("Continuing without Mouser due to rate limit");
                                 }
-                                else
+                                else if (supplier == SupplierType.Farnell)
                                 {
                                     skipFarnell = true;
                                     _logger.LogWarning("Continuing without Farnell due to rate limit");
+                                }
+                                else if (supplier == SupplierType.Israel)
+                                {
+                                    skipIsrael = true;
+                                    _logger.LogWarning("Continuing without Israel due to rate limit");
                                 }
                             }
                             else
@@ -797,6 +893,7 @@ namespace BOMVIEW
                         entry.DigiKeyData = new SupplierData { Price = 0, Availability = 0, IsAvailable = false };
                         entry.MouserData = new SupplierData { Price = 0, Availability = 0, IsAvailable = false };
                         entry.FarnellData = new SupplierData { Price = 0, Availability = 0, IsAvailable = false };
+                        entry.IsraelData = new SupplierData { Price = 0, Availability = 0, IsAvailable = false };
                     }
                     finally
                     {
@@ -852,9 +949,12 @@ namespace BOMVIEW
                 MouserTotalPrice = _bomEntries.Sum(e => e.MouserCurrentTotalPrice),
                 FarnellUnitTotal = _bomEntries.Sum(e => e.FarnellUnitPrice),
                 FarnellTotalPrice = _bomEntries.Sum(e => e.FarnellCurrentTotalPrice),
+                IsraelUnitTotal = _bomEntries.Sum(e => e.IsraelUnitPrice),
+                IsraelTotalPrice = _bomEntries.Sum(e => e.IsraelCurrentTotalPrice),
                 DigiKeyMissingCount = _bomEntries.Count(e => !(e.DigiKeyData?.IsAvailable ?? false)),
                 MouserMissingCount = _bomEntries.Count(e => !(e.MouserData?.IsAvailable ?? false)),
-                FarnellMissingCount = _bomEntries.Count(e => !(e.FarnellData?.IsAvailable ?? false))
+                FarnellMissingCount = _bomEntries.Count(e => !(e.FarnellData?.IsAvailable ?? false)),
+                IsraelMissingCount = _bomEntries.Count(e => !(e.IsraelData?.IsAvailable ?? false))
             };
 
             // Calculate best supplier totals and missing count
@@ -867,9 +967,10 @@ namespace BOMVIEW
                 var digiKeyAvailable = entry.DigiKeyData?.IsAvailable ?? false;
                 var mouserAvailable = entry.MouserData?.IsAvailable ?? false;
                 var farnellAvailable = entry.FarnellData?.IsAvailable ?? false;
+                var israelAvailable = entry.IsraelData?.IsAvailable ?? false;
 
                 // Count as missing if best supplier can't supply the part
-                if (!digiKeyAvailable && !mouserAvailable && !farnellAvailable)
+                if (!digiKeyAvailable && !mouserAvailable && !farnellAvailable && !israelAvailable)
                 {
                     bestSupplierMissingCount++;
                     continue;
@@ -886,6 +987,9 @@ namespace BOMVIEW
                     case "Farnell":
                         bestSupplierTotalPrice += entry.FarnellCurrentTotalPrice;
                         break;
+                    case "Israel":
+                        bestSupplierTotalPrice += entry.IsraelCurrentTotalPrice;
+                        break;
                 }
 
                 switch (entry.BestNextBreakSupplier)
@@ -899,6 +1003,9 @@ namespace BOMVIEW
                     case "Farnell":
                         bestSupplierNextBreakTotal += entry.FarnellNextBreakTotalPrice;
                         break;
+                    case "Israel":
+                        bestSupplierNextBreakTotal += entry.IsraelNextBreakTotalPrice;
+                        break;
                 }
             }
 
@@ -909,7 +1016,7 @@ namespace BOMVIEW
             Totals = totals;
             btnDuplicates.Visibility = Totals.DuplicateCount > 0 ? Visibility.Visible : Visibility.Collapsed;
             btnMissingProducts.Visibility =
-                (Totals.DigiKeyMissingCount > 0 || Totals.MouserMissingCount > 0 || Totals.FarnellMissingCount > 0)
+                (Totals.DigiKeyMissingCount > 0 || Totals.MouserMissingCount > 0 || Totals.FarnellMissingCount > 0 || Totals.IsraelMissingCount > 0)
                 ? Visibility.Visible : Visibility.Collapsed;
 
             // Add this line at the end
@@ -964,7 +1071,8 @@ namespace BOMVIEW
             var missingParts = _bomEntries.Where(e =>
                 !(e.DigiKeyData?.IsAvailable ?? false) &&
                 !(e.MouserData?.IsAvailable ?? false) &&
-                !(e.FarnellData?.IsAvailable ?? false)).ToList();
+                !(e.FarnellData?.IsAvailable ?? false) &&
+                !(e.IsraelData?.IsAvailable ?? false)).ToList();
 
             foreach (var part in missingParts)
             {
@@ -1079,14 +1187,20 @@ namespace BOMVIEW
 
                                             bomEntry.DigiKeyData = null;
                                             bomEntry.MouserData = null;
+                                            bomEntry.FarnellData = null;
+                                            bomEntry.IsraelData = null;
 
                                             var digiKeyTask = _digiKeyService.GetPriceAndAvailabilityAsync(updatedValue);
                                             var mouserTask = _mouserService.GetPriceAndAvailabilityAsync(updatedValue);
+                                            var farnellTask = _farnellService.GetPriceAndAvailabilityAsync(updatedValue);
+                                            var israelTask = _israelService.GetPriceAndAvailabilityAsync(updatedValue);
 
-                                            await Task.WhenAll(digiKeyTask, mouserTask);
+                                            await Task.WhenAll(digiKeyTask, mouserTask, farnellTask, israelTask);
 
                                             bomEntry.DigiKeyData = await digiKeyTask;
                                             bomEntry.MouserData = await mouserTask;
+                                            bomEntry.FarnellData = await farnellTask;
+                                            bomEntry.IsraelData = await israelTask;
 
                                             await UpdatePriceInformation(bomEntry);
 
@@ -1299,7 +1413,8 @@ namespace BOMVIEW
                         var missingPartsCount = _bomEntries.Count(e =>
                             !(e.DigiKeyData?.IsAvailable ?? false) &&
                             !(e.MouserData?.IsAvailable ?? false) &&
-                            !(e.FarnellData?.IsAvailable ?? false));
+                            !(e.FarnellData?.IsAvailable ?? false) &&
+                            !(e.IsraelData?.IsAvailable ?? false));
 
                         if (missingPartsCount > 0)
                         {
@@ -1369,6 +1484,23 @@ namespace BOMVIEW
                         await _farnellExporter.ExportFarnellItemsAsync(_bomEntries.ToList(), frBestPricesPath,
                             Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
                         exportLog.AppendLine("Farnell best prices exported.");
+                    }
+
+                    // Export Israel files
+                    if (selectedOptions["IsraelList"])
+                    {
+                        string ilListPath = Path.Combine(bomFolderPath, $"{baseFileName}_DK-IL_List.xlsx");
+                        await _israelExporter.ExportIsraelItemsAsync(_bomEntries.ToList(), ilListPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, false);
+                        exportLog.AppendLine("DigiKey Israel list exported.");
+                    }
+
+                    if (selectedOptions["IsraelBestPrices"])
+                    {
+                        string ilBestPricesPath = Path.Combine(bomFolderPath, $"{baseFileName}_DK-IL_Best_Prices.xlsx");
+                        await _israelExporter.ExportIsraelItemsAsync(_bomEntries.ToList(), ilBestPricesPath,
+                            Path.GetFileNameWithoutExtension(_currentFilePath), baseFileName, true);
+                        exportLog.AppendLine("DigiKey Israel best prices exported.");
                     }
 
                     // Export External Supplier files
@@ -1451,6 +1583,7 @@ namespace BOMVIEW
                 _digiKeyService,
                 _mouserService,
                 _farnellService,
+                _israelService,
                 _externalSupplierService,
                 _logger);
             dialog.Owner = this;
@@ -1630,6 +1763,24 @@ namespace BOMVIEW
                                 _logger.LogError($"Mouser refresh failed for {entry.OrderingCode}: {mex.Message}");
                             }
 
+                            try
+                            {
+                                entry.FarnellData = await _farnellService.GetPriceAndAvailabilityAsync(entry.OrderingCode);
+                            }
+                            catch (Exception fex)
+                            {
+                                _logger.LogError($"Farnell refresh failed for {entry.OrderingCode}: {fex.Message}");
+                            }
+                            
+                            try
+                            {
+                                entry.IsraelData = await _israelService.GetPriceAndAvailabilityAsync(entry.OrderingCode);
+                            }
+                            catch (Exception iex)
+                            {
+                                _logger.LogError($"Israel refresh failed for {entry.OrderingCode}: {iex.Message}");
+                            }
+
                             await UpdatePriceInformation(entry);
                         }
                     }
@@ -1738,7 +1889,8 @@ namespace BOMVIEW
                 var missingParts = _bomEntries.Where(e =>
                     !(e.DigiKeyData?.IsAvailable ?? false) &&
                     !(e.MouserData?.IsAvailable ?? false) &&
-                    !(e.FarnellData?.IsAvailable ?? false)).ToList();
+                    !(e.FarnellData?.IsAvailable ?? false) &&
+                    !(e.IsraelData?.IsAvailable ?? false)).ToList();
 
                 if (missingParts.Count == 0)
                     return null; // No missing parts to export
@@ -1761,10 +1913,11 @@ namespace BOMVIEW
                     sheet.Cells[1, 6].Value = "DigiKey Available";
                     sheet.Cells[1, 7].Value = "Mouser Available";
                     sheet.Cells[1, 8].Value = "Farnell Available";
-                    sheet.Cells[1, 9].Value = "Error/Reason";
+                    sheet.Cells[1, 9].Value = "Israel Available";
+                    sheet.Cells[1, 10].Value = "Error/Reason";
 
                     // Format headers
-                    for (int i = 1; i <= 9; i++)
+                    for (int i = 1; i <= 10; i++)
                     {
                         sheet.Cells[1, i].Style.Font.Bold = true;
                         sheet.Cells[1, i].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -1785,6 +1938,7 @@ namespace BOMVIEW
                         sheet.Cells[excelRow, 6].Value = part.DigiKeyData?.IsAvailable ?? false;
                         sheet.Cells[excelRow, 7].Value = part.MouserData?.IsAvailable ?? false;
                         sheet.Cells[excelRow, 8].Value = part.FarnellData?.IsAvailable ?? false;
+                        sheet.Cells[excelRow, 9].Value = part.IsraelData?.IsAvailable ?? false;
 
                         // Determine the error reason
                         string errorReason = "Not found in supplier databases";
@@ -1801,13 +1955,18 @@ namespace BOMVIEW
 
                         if (part.FarnellData != null && !part.FarnellData.IsAvailable)
                         {
-                            errorReason += "Farnell: Part not available.";
+                            errorReason += "Farnell: Part not available. ";
                         }
 
-                        sheet.Cells[excelRow, 9].Value = errorReason;
+                        if (part.IsraelData != null && !part.IsraelData.IsAvailable)
+                        {
+                            errorReason += "Israel: Part not available.";
+                        }
+
+                        sheet.Cells[excelRow, 10].Value = errorReason;
 
                         // Color the row red for visibility
-                        var rowRange = sheet.Cells[excelRow, 1, excelRow, 9];
+                        var rowRange = sheet.Cells[excelRow, 1, excelRow, 10];
                         rowRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
                         rowRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 255, 230, 230));
                     }
@@ -1832,6 +1991,9 @@ namespace BOMVIEW
 
                     summarySheet.Cells[7, 1].Value = "Missing from Farnell";
                     summarySheet.Cells[7, 2].Value = missingParts.Count(p => !(p.FarnellData?.IsAvailable ?? false));
+
+                    summarySheet.Cells[8, 1].Value = "Missing from Israel";
+                    summarySheet.Cells[8, 2].Value = missingParts.Count(p => !(p.IsraelData?.IsAvailable ?? false));
 
                     // Save the file
                     await package.SaveAsAsync(new FileInfo(missingPartsFilePath));
@@ -2163,6 +2325,25 @@ namespace BOMVIEW
                 _logger.LogError($"Error showing external supplier dialog: {ex.Message}");
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private string GetOtherSupplierString(SupplierType excludedSupplier, bool skipDigiKey, bool skipMouser, bool skipFarnell, bool skipIsrael)
+        {
+            var availableSuppliers = new List<string>();
+            
+            if (!skipDigiKey && excludedSupplier != SupplierType.DigiKey)
+                availableSuppliers.Add("DigiKey");
+                
+            if (!skipMouser && excludedSupplier != SupplierType.Mouser)
+                availableSuppliers.Add("Mouser");
+                
+            if (!skipFarnell && excludedSupplier != SupplierType.Farnell)
+                availableSuppliers.Add("Farnell");
+                
+            if (!skipIsrael && excludedSupplier != SupplierType.Israel)
+                availableSuppliers.Add("Israel");
+                
+            return string.Join(", ", availableSuppliers);
         }
 
     }
