@@ -22,7 +22,7 @@ public class DigiKeyService : BaseSupplierService, ISupplierService
     private DateTime _productTokenExpiry;
     private DateTime _listsTokenExpiry;
 
- 
+
 
 
     public void SetAuthorizationCode(string code)
@@ -31,9 +31,9 @@ public class DigiKeyService : BaseSupplierService, ISupplierService
     }
 
     // Add constants for locale settings
-    private const string LOCALE = "en";  
+    private const string LOCALE = "en";
     private const string CURRENCY = "USD";
-    private const string COUNTRY = "IL";   
+    private const string COUNTRY = "IL";
 
     public SupplierType SupplierType => SupplierType.DigiKey;
 
@@ -148,7 +148,7 @@ public class DigiKeyService : BaseSupplierService, ISupplierService
                                     $"MOQ: {variation.MinimumOrderQuantity}, " +
                                     $"Qty Available: {variation.QuantityAvailableforPackageType}, " +
                                     $"Price Breaks: {(variation.StandardPricing?.Count ?? 0)}");
-                    
+
                     // Log the price breaks for each variation to help with debugging
                     if (variation.StandardPricing != null && variation.StandardPricing.Any())
                     {
@@ -162,15 +162,15 @@ public class DigiKeyService : BaseSupplierService, ISupplierService
                 // Try to find the Cut Tape (CT) variation first
                 // In DigiKey API, CT products often have "CT" in their name or have a specific packaging type identifier
                 selectedVariation = digiKeyResponse.Product.ProductVariations
-                    .FirstOrDefault(v => 
-                        (v.DigiKeyProductNumber != null && v.DigiKeyProductNumber.Contains("CT")) || 
+                    .FirstOrDefault(v =>
+                        (v.DigiKeyProductNumber != null && v.DigiKeyProductNumber.Contains("CT")) ||
                         (v.PackagingType != null && (
-                            v.PackagingType.Contains("Cut Tape") || 
-                            v.PackagingType.Contains("CT") || 
+                            v.PackagingType.Contains("Cut Tape") ||
+                            v.PackagingType.Contains("CT") ||
                             v.PackagingType.Contains("Tape & Reel (Cut Tape)")
                         )) ||
                         (v.MinimumOrderQuantity <= 10)); // Cut Tape typically has lower MOQ
-                        
+
                 // If no CT variation found, use the one with the lowest MOQ (which is likely CT or similar small quantity option)
                 if (selectedVariation == null)
                 {

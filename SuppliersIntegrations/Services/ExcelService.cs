@@ -19,6 +19,7 @@ public class ExcelService : IExcelService
         public static class Colors
         {
             public static readonly System.Drawing.Color DigiKeyBackground = System.Drawing.Color.FromArgb(255, 227, 242, 253);
+            public static readonly System.Drawing.Color DigiKeyILBackground = System.Drawing.Color.FromArgb(255, 217, 232, 243);
             public static readonly System.Drawing.Color MouserBackground = System.Drawing.Color.FromArgb(255, 232, 245, 233);
             public static readonly System.Drawing.Color FarnellBackground = System.Drawing.Color.FromArgb(255, 255, 243, 224);
             public static readonly System.Drawing.Color OutOfStockBackground = System.Drawing.Color.FromArgb(255, 255, 200, 200);
@@ -26,7 +27,7 @@ public class ExcelService : IExcelService
             public static readonly System.Drawing.Color HeaderBackground = System.Drawing.Color.LightGray;
             public static readonly System.Drawing.Color TotalRowBackground = System.Drawing.Color.FromArgb(255, 242, 242, 242);
             public static readonly System.Drawing.Color BetterPriceBackground = System.Drawing.Color.FromArgb(255, 232, 245, 233);
-            public static readonly System.Drawing.Color ExternalSupplierBackground = System.Drawing.Color.FromArgb(225, 215, 213, 255); 
+            public static readonly System.Drawing.Color ExternalSupplierBackground = System.Drawing.Color.FromArgb(225, 215, 213, 255);
 
         }
     }
@@ -224,8 +225,8 @@ public class ExcelService : IExcelService
             {
             "Ordering Code", "Designator", "Value", "PCB Footprint",
             "Original Quantity", "Testview Stock",
-            "DK Order Quantity",
-            "DK Unit Price", "DK Total Price", "DK Stock",
+            "DK Order Quantity", "DK Unit Price", "DK Total Price", "DK Stock",
+            "DK-IL Order Quantity", "DK-IL Unit Price", "DK-IL Total Price", "DK-IL Stock",
             "MS Order Quantity", "MS Unit Price", "MS Total Price", "MS Stock",
             "FR Order Quantity", "FR Unit Price", "FR Total Price", "FR Stock",
             "Best Price"
@@ -252,37 +253,69 @@ public class ExcelService : IExcelService
                 row++;
             }
 
+            // Ensure we have at least one data row for calculations
+            if (row <= 2)
+            {
+                row = 3; // Add at least one empty row if there are no entries
+            }
 
             // Add totals row
             var totalRow = row;
             worksheet.Cells[totalRow, 1].Value = "TOTALS";
             worksheet.Cells[totalRow, 1].Style.Font.Bold = true;
 
-            // Calculate totals for Unit Price columns
-            worksheet.Cells[totalRow, 8].Formula = $"SUM(H2:H{row - 1})";  // DK Unit Price
-            worksheet.Cells[totalRow, 12].Formula = $"SUM(L2:L{row - 1})"; // MS Unit Price
-            worksheet.Cells[totalRow, 16].Formula = $"SUM(P2:P{row - 1})"; // FR Unit Price
+            // Only calculate totals if there's at least one data row
+            if (row > 2)
+            {
+                // Calculate totals for Unit Price columns
+                worksheet.Cells[totalRow, 8].Formula = $"SUM(H2:H{row - 1})";  // DK Unit Price
+                worksheet.Cells[totalRow, 12].Formula = $"SUM(L2:L{row - 1})"; // DK-IL Unit Price
+                worksheet.Cells[totalRow, 16].Formula = $"SUM(P2:P{row - 1})"; // MS Unit Price
+                worksheet.Cells[totalRow, 20].Formula = $"SUM(T2:T{row - 1})"; // FR Unit Price
 
-            // Calculate totals for Total Price columns
-            worksheet.Cells[totalRow, 9].Formula = $"SUM(I2:I{row - 1})";  // DK Total Price
-            worksheet.Cells[totalRow, 13].Formula = $"SUM(M2:M{row - 1})"; // MS Total Price
-            worksheet.Cells[totalRow, 17].Formula = $"SUM(Q2:Q{row - 1})"; // FR Total Price
-            worksheet.Cells[totalRow, 19].Formula = $"SUM(S2:S{row - 1})"; // Best Price
+                // Calculate totals for Total Price columns
+                worksheet.Cells[totalRow, 9].Formula = $"SUM(I2:I{row - 1})";  // DK Total Price
+                worksheet.Cells[totalRow, 13].Formula = $"SUM(M2:M{row - 1})"; // DK-IL Total Price
+                worksheet.Cells[totalRow, 17].Formula = $"SUM(Q2:Q{row - 1})"; // MS Total Price
+                worksheet.Cells[totalRow, 21].Formula = $"SUM(U2:U{row - 1})"; // FR Total Price
+                worksheet.Cells[totalRow, 23].Formula = $"SUM(W2:W{row - 1})"; // Best Price
+            }
+            else
+            {
+                // Set zeros for all totals if no data rows
+                var totalColumns = new[] { 8, 9, 12, 13, 16, 17, 20, 21, 23 };
+                foreach (var col in totalColumns)
+                {
+                    worksheet.Cells[totalRow, col].Value = 0;
+                }
+            }
 
             // Format totals for Unit Price columns
             worksheet.Cells[totalRow, 8].Style.Numberformat.Format = ExcelFormats.Currency;
             worksheet.Cells[totalRow, 12].Style.Numberformat.Format = ExcelFormats.Currency;
             worksheet.Cells[totalRow, 16].Style.Numberformat.Format = ExcelFormats.Currency;
+            worksheet.Cells[totalRow, 20].Style.Numberformat.Format = ExcelFormats.Currency;
 
             // Format totals for Total Price columns
             worksheet.Cells[totalRow, 9].Style.Numberformat.Format = ExcelFormats.Currency;
             worksheet.Cells[totalRow, 13].Style.Numberformat.Format = ExcelFormats.Currency;
             worksheet.Cells[totalRow, 17].Style.Numberformat.Format = ExcelFormats.Currency;
-            worksheet.Cells[totalRow, 19].Style.Numberformat.Format = ExcelFormats.Currency;
-            worksheet.Column(17).Width = 20;
+            worksheet.Cells[totalRow, 21].Style.Numberformat.Format = ExcelFormats.Currency;
+            worksheet.Cells[totalRow, 23].Style.Numberformat.Format = ExcelFormats.Currency;
 
             // Style the totals row based on availability across suppliers
-            StyleTotalsRow(worksheet, totalRow, entries);
+            if (entries.Any())
+            {
+                StyleTotalsRow(worksheet, totalRow, entries);
+            }
+            else
+            {
+                // Default styling for empty totals row
+                var totalsRange = worksheet.Cells[totalRow, 1, totalRow, headers.Length];
+                totalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                totalsRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.TotalRowBackground);
+                totalsRange.Style.Font.Bold = true;
+            }
 
             // Add missing components sheet
             WriteMissingComponentsSheet(missingComponentsSheet, entries);
@@ -290,23 +323,33 @@ public class ExcelService : IExcelService
             // Add legend
             AddLegend(worksheet, totalRow + 3);
 
-            // Auto-fit columns
-            worksheet.Cells[1, 1, totalRow, headers.Length].AutoFitColumns();
+            // Auto-fit columns - only if we have data
+            if (totalRow > 2)
+            {
+                worksheet.Cells[1, 1, totalRow, headers.Length].AutoFitColumns();
+            }
+            else
+            {
+                worksheet.Cells[1, 1, 2, headers.Length].AutoFitColumns();
+            }
 
             // Set specific column widths
             worksheet.Column(2).Width = 13;  // B
             worksheet.Column(3).Width = 10;  // C
             worksheet.Column(4).Width = 13;  // D
-            worksheet.Column(8).Width = 14;  // H
-            worksheet.Column(9).Width = 14;  // I
-            worksheet.Column(12).Width = 14; // L
-            worksheet.Column(13).Width = 14; // M
-            worksheet.Column(16).Width = 14; // P
-            worksheet.Column(17).Width = 14; // Q
-            worksheet.Column(19).Width = 14; // S
+            worksheet.Column(8).Width = 14;  // H - DK Unit Price
+            worksheet.Column(9).Width = 14;  // I - DK Total Price
+            worksheet.Column(12).Width = 14; // L - DK-IL Unit Price
+            worksheet.Column(13).Width = 14; // M - DK-IL Total Price
+            worksheet.Column(16).Width = 14; // P - MS Unit Price
+            worksheet.Column(17).Width = 14; // Q - MS Total Price
+            worksheet.Column(20).Width = 14; // T - FR Unit Price
+            worksheet.Column(21).Width = 14; // U - FR Total Price
+            worksheet.Column(23).Width = 14; // W - Best Price
 
-            // Add borders
-            var dataRange = worksheet.Cells[1, 1, totalRow, headers.Length];
+            // Add borders - ensure valid range
+            var endRow = Math.Max(2, totalRow);
+            var dataRange = worksheet.Cells[1, 1, endRow, headers.Length];
             dataRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
             dataRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
             dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
@@ -316,58 +359,71 @@ public class ExcelService : IExcelService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error saving Excel file: {ex.Message}", ex);
+            throw new Exception($"Save error: {ex.Message}", ex);
         }
     }
 
 
     private void StyleTotalsRow(ExcelWorksheet worksheet, int totalRow, List<BomEntry> entries)
-{
-    // Default styling for the whole row
-    var totalsRange = worksheet.Cells[totalRow, 1, totalRow, worksheet.Dimension.End.Column];
-    totalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-    totalsRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.TotalRowBackground);
-    totalsRange.Style.Font.Bold = true;
+    {
+        // Default styling for the whole row
+        // Check if worksheet.Dimension is null (which happens with empty sheets)
+        int endColumn = worksheet.Dimension?.End.Column ?? 23; // Default to the number of columns we know we're using
+        var totalsRange = worksheet.Cells[totalRow, 1, totalRow, endColumn];
+        totalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        totalsRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.TotalRowBackground);
+        totalsRange.Style.Font.Bold = true;
 
-    // DigiKey section styling - UPDATED INDICES
-    bool anyDigiKeyAvailable = entries.Any(e => e.DigiKeyData?.IsAvailable ?? false);
-    var dkTotalsRange = worksheet.Cells[totalRow, 7, totalRow, 10];
-    dkTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-    dkTotalsRange.Style.Fill.BackgroundColor.SetColor(
-        anyDigiKeyAvailable ?
-            ExcelFormats.Colors.DigiKeyBackground :
-            ExcelFormats.Colors.OutOfStockBackground);
+        // DigiKey section styling
+        bool anyDigiKeyAvailable = entries.Any(e => e.DigiKeyData?.IsAvailable ?? false);
+        var dkTotalsRange = worksheet.Cells[totalRow, 7, totalRow, 10];
+        dkTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        dkTotalsRange.Style.Fill.BackgroundColor.SetColor(
+            anyDigiKeyAvailable ?
+                ExcelFormats.Colors.DigiKeyBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
 
-    // Mouser section styling - UPDATED INDICES
-    bool anyMouserAvailable = entries.Any(e => e.MouserData?.IsAvailable ?? false);
-    var msTotalsRange = worksheet.Cells[totalRow, 11, totalRow, 14];
-    msTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-    msTotalsRange.Style.Fill.BackgroundColor.SetColor(
-        anyMouserAvailable ?
-            ExcelFormats.Colors.MouserBackground :
-            ExcelFormats.Colors.OutOfStockBackground);
+        // DigiKey-IL section styling
+        bool anyDigiKeyILAvailable = entries.Any(e => e.IsraelData?.IsAvailable ?? false);
+        var dkILTotalsRange = worksheet.Cells[totalRow, 11, totalRow, 14];
+        dkILTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        dkILTotalsRange.Style.Fill.BackgroundColor.SetColor(
+            anyDigiKeyILAvailable ?
+                ExcelFormats.Colors.DigiKeyILBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
 
-    // Farnell section styling - UPDATED INDICES
-    bool anyFarnellAvailable = entries.Any(e => e.FarnellData?.IsAvailable ?? false);
-    var frTotalsRange = worksheet.Cells[totalRow, 15, totalRow, 18];
-    frTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-    frTotalsRange.Style.Fill.BackgroundColor.SetColor(
-        anyFarnellAvailable ?
-            ExcelFormats.Colors.FarnellBackground :
-            ExcelFormats.Colors.OutOfStockBackground);
+        // Mouser section styling
+        bool anyMouserAvailable = entries.Any(e => e.MouserData?.IsAvailable ?? false);
+        var msTotalsRange = worksheet.Cells[totalRow, 15, totalRow, 18];
+        msTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        msTotalsRange.Style.Fill.BackgroundColor.SetColor(
+            anyMouserAvailable ?
+                ExcelFormats.Colors.MouserBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
 
-    // Best Price cell styling - UPDATED INDEX
-    var bestPriceTotal = worksheet.Cells[totalRow, 19];
-    bestPriceTotal.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        // Farnell section styling
+        bool anyFarnellAvailable = entries.Any(e => e.FarnellData?.IsAvailable ?? false);
+        var frTotalsRange = worksheet.Cells[totalRow, 19, totalRow, 22];
+        frTotalsRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        frTotalsRange.Style.Fill.BackgroundColor.SetColor(
+            anyFarnellAvailable ?
+                ExcelFormats.Colors.FarnellBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
+
+        // Best Price cell styling
+        var bestPriceTotal = worksheet.Cells[totalRow, 23];
+        bestPriceTotal.Style.Fill.PatternType = ExcelFillStyle.Solid;
 
         // Determine which supplier has the best overall price (lowest non-zero sum)
         decimal dkTotal = entries.Sum(e => e.DigiKeyCurrentTotalPrice);
+        decimal dkILTotal = entries.Sum(e => e.IsraelCurrentTotalPrice);
         decimal msTotal = entries.Sum(e => e.MouserCurrentTotalPrice);
         decimal frTotal = entries.Sum(e => e.FarnellCurrentTotalPrice);
 
         // Find the lowest non-zero total
         var validTotals = new List<(string supplier, decimal total)>();
         if (dkTotal > 0 && anyDigiKeyAvailable) validTotals.Add(("DigiKey", dkTotal));
+        if (dkILTotal > 0 && anyDigiKeyILAvailable) validTotals.Add(("DigiKey-IL", dkILTotal));
         if (msTotal > 0 && anyMouserAvailable) validTotals.Add(("Mouser", msTotal));
         if (frTotal > 0 && anyFarnellAvailable) validTotals.Add(("Farnell", frTotal));
 
@@ -378,6 +434,9 @@ public class ExcelService : IExcelService
             {
                 case "DigiKey":
                     bestPriceTotal.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.DigiKeyBackground);
+                    break;
+                case "DigiKey-IL":
+                    bestPriceTotal.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.DigiKeyILBackground);
                     break;
                 case "Mouser":
                     bestPriceTotal.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.MouserBackground);
@@ -393,9 +452,124 @@ public class ExcelService : IExcelService
         }
     }
 
+    private void StyleSupplierSections(ExcelWorksheet worksheet, int row, BomEntry entry)
+    {
+        // DigiKey section (columns 7-10)
+        var digiKeyRange = worksheet.Cells[row, 7, row, 10];
+        digiKeyRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
 
+        // Handle out-of-stock condition more explicitly
+        bool digiKeyAvailable = entry.DigiKeyData?.IsAvailable ?? false;
+        bool digiKeyHasStock = (entry.DigiKeyData?.Availability ?? 0) > 0;
 
-    // 1. Fix WriteEntryRow method to remove duplicates
+        digiKeyRange.Style.Fill.BackgroundColor.SetColor(
+            digiKeyAvailable && digiKeyHasStock ?
+                ExcelFormats.Colors.DigiKeyBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
+
+        // DigiKey-IL section (columns 11-14)
+        var digiKeyILRange = worksheet.Cells[row, 11, row, 14];
+        digiKeyILRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+
+        bool digiKeyILAvailable = entry.IsraelData?.IsAvailable ?? false;
+        bool digiKeyILHasStock = (entry.IsraelData?.Availability ?? 0) > 0;
+
+        digiKeyILRange.Style.Fill.BackgroundColor.SetColor(
+            digiKeyILAvailable && digiKeyILHasStock ?
+                ExcelFormats.Colors.DigiKeyILBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
+
+        // Mouser section (columns 15-18)
+        var mouserRange = worksheet.Cells[row, 15, row, 18];
+        mouserRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+
+        bool mouserAvailable = entry.MouserData?.IsAvailable ?? false;
+        bool mouserHasStock = (entry.MouserData?.Availability ?? 0) > 0;
+
+        mouserRange.Style.Fill.BackgroundColor.SetColor(
+            mouserAvailable && mouserHasStock ?
+                ExcelFormats.Colors.MouserBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
+
+        // Farnell section (columns 19-22)
+        var farnellRange = worksheet.Cells[row, 19, row, 22];
+        farnellRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+
+        bool farnellAvailable = entry.FarnellData?.IsAvailable ?? false;
+        bool farnellHasStock = (entry.FarnellData?.Availability ?? 0) > 0;
+
+        farnellRange.Style.Fill.BackgroundColor.SetColor(
+            farnellAvailable && farnellHasStock ?
+                ExcelFormats.Colors.FarnellBackground :
+                ExcelFormats.Colors.OutOfStockBackground);
+
+        // Best Price column - color based on supplier
+        worksheet.Cells[row, 23].Style.Fill.PatternType = ExcelFillStyle.Solid;
+
+        // Only color Best Price based on supplier if that supplier actually has stock
+        bool supplierHasStock = false;
+
+        switch (entry.BestCurrentSupplier)
+        {
+            case "DigiKey":
+                supplierHasStock = digiKeyAvailable && digiKeyHasStock;
+                worksheet.Cells[row, 23].Style.Fill.BackgroundColor.SetColor(
+                    supplierHasStock ?
+                        ExcelFormats.Colors.DigiKeyBackground :
+                        ExcelFormats.Colors.OutOfStockBackground);
+                break;
+            case "DigiKey-IL":
+                supplierHasStock = digiKeyILAvailable && digiKeyILHasStock;
+                worksheet.Cells[row, 23].Style.Fill.BackgroundColor.SetColor(
+                    supplierHasStock ?
+                        ExcelFormats.Colors.DigiKeyILBackground :
+                        ExcelFormats.Colors.OutOfStockBackground);
+                break;
+            case "Mouser":
+                supplierHasStock = mouserAvailable && mouserHasStock;
+                worksheet.Cells[row, 23].Style.Fill.BackgroundColor.SetColor(
+                    supplierHasStock ?
+                        ExcelFormats.Colors.MouserBackground :
+                        ExcelFormats.Colors.OutOfStockBackground);
+                break;
+            case "Farnell":
+                supplierHasStock = farnellAvailable && farnellHasStock;
+                worksheet.Cells[row, 23].Style.Fill.BackgroundColor.SetColor(
+                    supplierHasStock ?
+                        ExcelFormats.Colors.FarnellBackground :
+                        ExcelFormats.Colors.OutOfStockBackground);
+                break;
+            default:
+                worksheet.Cells[row, 23].Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.OutOfStockBackground);
+                break;
+        }
+
+        // External supplier styling - override all previous styling if external supplier
+        if (entry.HasExternalSupplier)
+        {
+            var rowRange = worksheet.Cells[row, 1, row, 23]; // Update the column number for the entire row
+            rowRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            rowRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.ExternalSupplierBackground);
+
+            // Add a comment to indicate external supplier
+            if (!string.IsNullOrEmpty(entry.BestCurrentSupplier) && entry.BestCurrentSupplier.StartsWith("External:"))
+            {
+                worksheet.Cells[row, 23].AddComment($"External Supplier: {entry.BestCurrentSupplier.Substring(9)}", "BOMVIEW");
+            }
+        }
+
+        // All out of stock styling - override all previous styling if all suppliers are out of stock
+        if ((!digiKeyAvailable || !digiKeyHasStock) &&
+            (!digiKeyILAvailable || !digiKeyILHasStock) &&
+            (!mouserAvailable || !mouserHasStock) &&
+            (!farnellAvailable || !farnellHasStock))
+        {
+            var rowRange = worksheet.Cells[row, 1, row, 23];
+            rowRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            rowRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.OutOfStockBackground);
+        }
+    }
+
     private void WriteEntryRow(ExcelWorksheet worksheet, int row, BomEntry entry)
     {
         // Basic component information in the exact requested order
@@ -404,9 +578,9 @@ public class ExcelService : IExcelService
         worksheet.Cells[row, 2].Value = entry.Designator;
         worksheet.Cells[row, 3].Value = entry.Value;
         worksheet.Cells[row, 4].Value = entry.PcbFootprint;
-        worksheet.Cells[row, 5].Value = entry.QuantityTotal; 
+        worksheet.Cells[row, 5].Value = entry.QuantityTotal;
         worksheet.Cells[row, 6].Value = entry.StockQuantity;
-        worksheet.Cells[row, 7].Value = entry.DigiKeyOrderQuantity; 
+        worksheet.Cells[row, 7].Value = entry.DigiKeyOrderQuantity;
 
         // Add hyperlink for the order code
         if (!string.IsNullOrEmpty(entry.OrderingCode))
@@ -415,6 +589,10 @@ public class ExcelService : IExcelService
             if (entry.BestCurrentSupplier == "DigiKey" && !string.IsNullOrEmpty(entry.DigiKeyProductUrl))
             {
                 url = entry.DigiKeyProductUrl;
+            }
+            else if (entry.BestCurrentSupplier == "DigiKey-IL" && !string.IsNullOrEmpty(entry.IsraelProductUrl))
+            {
+                url = entry.IsraelProductUrl;
             }
             else if (entry.BestCurrentSupplier == "Mouser" && !string.IsNullOrEmpty(entry.MouserProductUrl))
             {
@@ -428,9 +606,11 @@ public class ExcelService : IExcelService
             {
                 url = entry.BestCurrentSupplier == "DigiKey"
                     ? $"https://www.digikey.co.il/en/products/result?keywords={Uri.EscapeDataString(entry.OrderingCode)}"
-                    : (entry.BestCurrentSupplier == "Mouser"
-                        ? $"https://www.mouser.com/c/?q={Uri.EscapeDataString(entry.OrderingCode)}"
-                        : $"https://il.farnell.com/search?st={Uri.EscapeDataString(entry.OrderingCode)}");
+                    : (entry.BestCurrentSupplier == "DigiKey-IL"
+                        ? $"https://www.digikey.co.il/en/products/result?keywords={Uri.EscapeDataString(entry.OrderingCode)}"
+                        : (entry.BestCurrentSupplier == "Mouser"
+                            ? $"https://www.mouser.com/c/?q={Uri.EscapeDataString(entry.OrderingCode)}"
+                            : $"https://il.farnell.com/search?st={Uri.EscapeDataString(entry.OrderingCode)}"));
             }
 
             orderCodeCell.Hyperlink = new Uri(url);
@@ -438,35 +618,41 @@ public class ExcelService : IExcelService
             orderCodeCell.Style.Font.UnderLine = true;
         }
 
-        // DigiKey columns - SHIFTED RIGHT BY 1 MORE COLUMN
+        // DigiKey columns
         worksheet.Cells[row, 8].Value = entry.DigiKeyUnitPrice;
         worksheet.Cells[row, 9].Value = entry.DigiKeyCurrentTotalPrice;
         worksheet.Cells[row, 10].Value = entry.DigiKeyData?.Availability ?? 0;
 
-        // Mouser columns - SHIFTED RIGHT BY 1 MORE COLUMN
-        worksheet.Cells[row, 11].Value = entry.MouserOrderQuantity;
-        worksheet.Cells[row, 12].Value = entry.MouserCurrentUnitPrice;
-        worksheet.Cells[row, 13].Value = entry.MouserCurrentTotalPrice;
-        worksheet.Cells[row, 14].Value = entry.MouserData?.Availability ?? 0;
+        // DigiKey-IL columns (using Israel properties)
+        worksheet.Cells[row, 11].Value = entry.IsraelOrderQuantity;
+        worksheet.Cells[row, 12].Value = entry.IsraelUnitPrice;
+        worksheet.Cells[row, 13].Value = entry.IsraelCurrentTotalPrice;
+        worksheet.Cells[row, 14].Value = entry.IsraelData?.Availability ?? 0;
 
-        // Farnell columns - SHIFTED RIGHT BY 1 MORE COLUMN
-        worksheet.Cells[row, 15].Value = entry.FarnellOrderQuantity;
-        worksheet.Cells[row, 16].Value = entry.FarnellCurrentUnitPrice;
-        worksheet.Cells[row, 17].Value = entry.FarnellCurrentTotalPrice;
-        worksheet.Cells[row, 18].Value = entry.FarnellData?.Availability ?? 0;
+        // Mouser columns
+        worksheet.Cells[row, 15].Value = entry.MouserOrderQuantity;
+        worksheet.Cells[row, 16].Value = entry.MouserCurrentUnitPrice;
+        worksheet.Cells[row, 17].Value = entry.MouserCurrentTotalPrice;
+        worksheet.Cells[row, 18].Value = entry.MouserData?.Availability ?? 0;
 
-        // Best Price (combined column) - SHIFTED RIGHT BY 1 MORE COLUMN
-        worksheet.Cells[row, 19].Value = entry.CurrentTotalPrice;
+        // Farnell columns
+        worksheet.Cells[row, 19].Value = entry.FarnellOrderQuantity;
+        worksheet.Cells[row, 20].Value = entry.FarnellCurrentUnitPrice;
+        worksheet.Cells[row, 21].Value = entry.FarnellCurrentTotalPrice;
+        worksheet.Cells[row, 22].Value = entry.FarnellData?.Availability ?? 0;
 
-        // Format prices - UPDATED COLUMN INDICES
-        var priceColumns = new[] { 8, 9, 12, 13, 16, 17, 19 };
+        // Best Price (combined column)
+        worksheet.Cells[row, 23].Value = entry.CurrentTotalPrice;
+
+        // Format prices
+        var priceColumns = new[] { 8, 9, 12, 13, 16, 17, 20, 21, 23 };
         foreach (var col in priceColumns)
         {
             worksheet.Cells[row, col].Style.Numberformat.Format = ExcelFormats.Currency;
         }
 
-        // Format quantities and stock - UPDATED COLUMN INDICES AND ADDED COLUMN 5
-        var quantityColumns = new[] { 5, 6, 7, 10, 11, 14, 15, 18 };
+        // Format quantities and stock
+        var quantityColumns = new[] { 5, 6, 7, 10, 11, 14, 15, 18, 19, 22 };
         foreach (var col in quantityColumns)
         {
             worksheet.Cells[row, col].Style.Numberformat.Format = ExcelFormats.Quantity;
@@ -475,109 +661,6 @@ public class ExcelService : IExcelService
         // Apply supplier-specific styling
         StyleSupplierSections(worksheet, row, entry);
     }
-    private void StyleSupplierSections(ExcelWorksheet worksheet, int row, BomEntry entry)
-    {
-        // DigiKey section (columns 7-10) - UPDATED INDICES
-        var digiKeyRange = worksheet.Cells[row, 7, row, 10];
-        digiKeyRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-
-        // Handle out-of-stock condition more explicitly
-        bool digiKeyAvailable = entry.DigiKeyData?.IsAvailable ?? false;
-        bool digiKeyHasStock = (entry.DigiKeyData?.Availability ?? 0) > 0;
-
-        digiKeyRange.Style.Fill.BackgroundColor.SetColor(
-            digiKeyAvailable && digiKeyHasStock ?
-                ExcelFormats.Colors.DigiKeyBackground :
-                ExcelFormats.Colors.OutOfStockBackground);
-
-        // Mouser section (columns 11-14) - UPDATED INDICES
-        var mouserRange = worksheet.Cells[row, 11, row, 14];
-        mouserRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-
-        bool mouserAvailable = entry.MouserData?.IsAvailable ?? false;
-        bool mouserHasStock = (entry.MouserData?.Availability ?? 0) > 0;
-
-        mouserRange.Style.Fill.BackgroundColor.SetColor(
-            mouserAvailable && mouserHasStock ?
-                ExcelFormats.Colors.MouserBackground :
-                ExcelFormats.Colors.OutOfStockBackground);
-
-        // Farnell section (columns 15-18) - UPDATED INDICES
-        var farnellRange = worksheet.Cells[row, 15, row, 18];
-        farnellRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-
-        bool farnellAvailable = entry.FarnellData?.IsAvailable ?? false;
-        bool farnellHasStock = (entry.FarnellData?.Availability ?? 0) > 0;
-
-        farnellRange.Style.Fill.BackgroundColor.SetColor(
-            farnellAvailable && farnellHasStock ?
-                ExcelFormats.Colors.FarnellBackground :
-                ExcelFormats.Colors.OutOfStockBackground);
-
-        // Best Price column - color based on supplier - UPDATED INDEX
-        worksheet.Cells[row, 19].Style.Fill.PatternType = ExcelFillStyle.Solid;
-
-        // Only color Best Price based on supplier if that supplier actually has stock
-        bool supplierHasStock = false;
-
-        switch (entry.BestCurrentSupplier)
-        {
-            case "DigiKey":
-                supplierHasStock = digiKeyAvailable && digiKeyHasStock;
-                worksheet.Cells[row, 19].Style.Fill.BackgroundColor.SetColor(
-                    supplierHasStock ?
-                        ExcelFormats.Colors.DigiKeyBackground :
-                        ExcelFormats.Colors.OutOfStockBackground);
-                break;
-            case "Mouser":
-                supplierHasStock = mouserAvailable && mouserHasStock;
-                worksheet.Cells[row, 19].Style.Fill.BackgroundColor.SetColor(
-                    supplierHasStock ?
-                        ExcelFormats.Colors.MouserBackground :
-                        ExcelFormats.Colors.OutOfStockBackground);
-                break;
-            case "Farnell":
-                supplierHasStock = farnellAvailable && farnellHasStock;
-                worksheet.Cells[row, 19].Style.Fill.BackgroundColor.SetColor(
-                    supplierHasStock ?
-                        ExcelFormats.Colors.FarnellBackground :
-                        ExcelFormats.Colors.OutOfStockBackground);
-                break;
-            default:
-                worksheet.Cells[row, 19].Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.OutOfStockBackground);
-                break;
-        }
-
-        // External supplier styling - override all previous styling if external supplier
-        if (entry.HasExternalSupplier)
-        {
-            var rowRange = worksheet.Cells[row, 1, row, 19]; // Update the column number for the entire row
-            rowRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            rowRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.ExternalSupplierBackground);
-
-            // Add a comment to indicate external supplier
-            if (!string.IsNullOrEmpty(entry.BestCurrentSupplier) && entry.BestCurrentSupplier.StartsWith("External:"))
-            {
-                worksheet.Cells[row, 19].AddComment($"External Supplier: {entry.BestCurrentSupplier.Substring(9)}", "BOMVIEW");
-            }
-        }
-
-        // All out of stock styling - override all previous styling if all suppliers are out of stock
-        // UPDATED LAST COLUMN INDEX
-        if ((!digiKeyAvailable || !digiKeyHasStock) &&
-            (!mouserAvailable || !mouserHasStock) &&
-            (!farnellAvailable || !farnellHasStock))
-        {
-            var rowRange = worksheet.Cells[row, 1, row, 19];
-            rowRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            rowRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.OutOfStockBackground);
-        }
-    }
-    
-    // 2. Fix StyleEntryRow method to use ExcelFormats colors
-
-
-
 
     private void WriteMissingComponentsSheet(ExcelWorksheet sheet, List<BomEntry> entries)
     {
@@ -590,6 +673,7 @@ public class ExcelService : IExcelService
         "Quantity (One)",
         "Total Quantity",
         "DigiKey Available",
+        "DigiKey-IL Available",
         "Mouser Available",
         "Farnell Available"
     };
@@ -603,14 +687,17 @@ public class ExcelService : IExcelService
         }
 
         int row = 2;
+        bool foundMissingComponents = false;
         foreach (var entry in entries)
         {
             bool digiKeyMissing = !(entry.DigiKeyData?.IsAvailable ?? false);
+            bool digiKeyILMissing = !(entry.IsraelData?.IsAvailable ?? false);
             bool mouserMissing = !(entry.MouserData?.IsAvailable ?? false);
             bool farnellMissing = !(entry.FarnellData?.IsAvailable ?? false);
 
-            if (digiKeyMissing || mouserMissing || farnellMissing)
+            if (digiKeyMissing || digiKeyILMissing || mouserMissing || farnellMissing)
             {
+                foundMissingComponents = true;
                 sheet.Cells[row, 1].Value = entry.OrderingCode;
                 sheet.Cells[row, 2].Value = entry.Designator;
                 sheet.Cells[row, 3].Value = entry.Value;
@@ -618,13 +705,14 @@ public class ExcelService : IExcelService
                 sheet.Cells[row, 5].Value = entry.QuantityForOne;
                 sheet.Cells[row, 6].Value = entry.QuantityTotal;
                 sheet.Cells[row, 7].Value = !digiKeyMissing;
-                sheet.Cells[row, 8].Value = !mouserMissing;
-                sheet.Cells[row, 9].Value = !farnellMissing;
+                sheet.Cells[row, 8].Value = !digiKeyILMissing;
+                sheet.Cells[row, 9].Value = !mouserMissing;
+                sheet.Cells[row, 10].Value = !farnellMissing;
 
                 // Style the row based on availability
-                if (digiKeyMissing && mouserMissing && farnellMissing)
+                if (digiKeyMissing && digiKeyILMissing && mouserMissing && farnellMissing)
                 {
-                    var rowRange = sheet.Cells[row, 1, row, 9];
+                    var rowRange = sheet.Cells[row, 1, row, 10];
                     rowRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
                     rowRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.OutOfStockBackground);
                 }
@@ -637,12 +725,23 @@ public class ExcelService : IExcelService
             }
         }
 
-        // Format sheet
-        var dataRange = sheet.Cells[1, 1, row - 1, headers.Length];
+        // If no entries have been added, add a note
+        if (!foundMissingComponents)
+        {
+            sheet.Cells[row, 1].Value = "No missing components found";
+            sheet.Cells[row, 1, row, 10].Merge = true;
+            sheet.Cells[row, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            sheet.Cells[row, 1].Style.Font.Italic = true;
+            row++;
+        }
+
+        // Format sheet - ensure valid range even if empty
+        var endRow = Math.Max(2, row - 1);
+        var dataRange = sheet.Cells[1, 1, endRow, headers.Length];
         dataRange.AutoFitColumns();
         StyleSheetBorders(dataRange);
     }
-    
+
 
     // Replace both AddBestPricesLegend and AddLegend with this unified method
     private void AddLegend(ExcelWorksheet sheet, int startRow)
@@ -654,9 +753,10 @@ public class ExcelService : IExcelService
         var legendItems = new[]
    {
     ("DigiKey Best Price", ExcelFormats.Colors.DigiKeyBackground),
+    ("DigiKey-IL Best Price", ExcelFormats.Colors.DigiKeyILBackground),
     ("Mouser Best Price", ExcelFormats.Colors.MouserBackground),
     ("Farnell Best Price", ExcelFormats.Colors.FarnellBackground),
-    ("External Supplier", ExcelFormats.Colors.ExternalSupplierBackground), 
+    ("External Supplier", ExcelFormats.Colors.ExternalSupplierBackground),
     ("Out of Stock", ExcelFormats.Colors.OutOfStockBackground),
     ("User Entered Data", ExcelFormats.Colors.UserEnteredBackground)
 };
@@ -676,7 +776,7 @@ public class ExcelService : IExcelService
 
         var notes = new[]
         {
-        "This file contains pricing and availability information from DigiKey, Mouser and Farnell.",
+        "This file contains pricing and availability information from DigiKey, DigiKey-IL, Mouser and Farnell.",
         "Color coding indicates the best price supplier for each component.",
         $"Last updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"
     };
@@ -687,7 +787,7 @@ public class ExcelService : IExcelService
             sheet.Cells[infoRow + i + 1, 1, infoRow + i + 1, 5].Merge = true;
         }
     }
-  
+
 
     private void StyleSheetBorders(ExcelRange range)
     {
@@ -752,21 +852,21 @@ public class ExcelService : IExcelService
             // Add headers
             var headers = new[]
             {
-            "Order Code",
-            "Designator",
-            "Value",
-            "PCB Footprint",
-            "Quantity",
-            "Supplier Name",
-            "Unit Price",
-            "Total Price",
-            "Availability",
-            "URL",
-            "Added On",
-            "Estimated Delivery",
-            "Notes",
-            "Contact Info"
-        };
+                "Order Code",
+                "Designator",
+                "Value",
+                "PCB Footprint",
+                "Quantity",
+                "Supplier Name",
+                "Unit Price",
+                "Total Price",
+                "Availability",
+                "URL",
+                "Added On",
+                "Estimated Delivery",
+                "Notes",
+                "Contact Info"
+            };
 
             for (int i = 0; i < headers.Length; i++)
             {
@@ -800,9 +900,14 @@ public class ExcelService : IExcelService
                 {
                     try
                     {
-                        sheet.Cells[row, 10].Hyperlink = new Uri(entry.SupplierUrl);
-                        sheet.Cells[row, 10].Style.Font.Color.SetColor(System.Drawing.Color.Blue);
-                        sheet.Cells[row, 10].Style.Font.UnderLine = true;
+                        // Make sure the URL is valid before creating a hyperlink
+                        Uri uri;
+                        if (Uri.TryCreate(entry.SupplierUrl, UriKind.Absolute, out uri))
+                        {
+                            sheet.Cells[row, 10].Hyperlink = uri;
+                            sheet.Cells[row, 10].Style.Font.Color.SetColor(System.Drawing.Color.Blue);
+                            sheet.Cells[row, 10].Style.Font.UnderLine = true;
+                        }
                     }
                     catch
                     {
@@ -813,36 +918,32 @@ public class ExcelService : IExcelService
                 // Format price columns
                 sheet.Cells[row, 7].Style.Numberformat.Format = ExcelFormats.Currency;
                 sheet.Cells[row, 8].Style.Numberformat.Format = ExcelFormats.Currency;
+                sheet.Cells[row, 9].Style.Numberformat.Format = ExcelFormats.Quantity;
 
-                // Format date columns
-                sheet.Cells[row, 11].Style.Numberformat.Format = "yyyy-mm-dd";
-                sheet.Cells[row, 12].Style.Numberformat.Format = "yyyy-mm-dd";
+                // Apply styling to the row
+                var rowRange = sheet.Cells[row, 1, row, headers.Length];
+                rowRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                rowRange.Style.Fill.BackgroundColor.SetColor(ExcelFormats.Colors.ExternalSupplierBackground);
 
                 row++;
             }
 
-            // Add a special color to the entire external suppliers sheet
-            var dataRange = sheet.Cells[1, 1, Math.Max(2, row - 1), headers.Length];
-            dataRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
-            dataRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
-            dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
-            dataRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            // If no entries were added, add a note
+            if (entries.Count == 0)
+            {
+                sheet.Cells[2, 1].Value = "No external supplier entries found";
+                sheet.Cells[2, 1, 2, headers.Length].Merge = true;
+                sheet.Cells[2, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                sheet.Cells[2, 1].Style.Font.Italic = true;
+                row = 3; // Update row for correct styling below
+            }
 
-            // Auto-fit all columns
-            sheet.Cells[1, 1, row - 1, headers.Length].AutoFitColumns();
+            // Auto-fit columns and apply borders
+            var endRow = Math.Max(2, row - 1);
+            var dataRange = sheet.Cells[1, 1, endRow, headers.Length];
+            dataRange.AutoFitColumns();
+            StyleSheetBorders(dataRange);
 
-            // Add a note about external suppliers
-            var notesRow = row + 2;
-            sheet.Cells[notesRow, 1].Value = "Note: External Suppliers";
-            sheet.Cells[notesRow, 1].Style.Font.Bold = true;
-            sheet.Cells[notesRow + 1, 1].Value = "This sheet contains components sourced from external suppliers outside of DigiKey, Mouser, and Farnell.";
-            sheet.Cells[notesRow + 1, 1, notesRow + 1, 6].Merge = true;
-            sheet.Cells[notesRow + 2, 1].Value = "These parts require manual ordering and are not included in the automated BOM calculations.";
-            sheet.Cells[notesRow + 2, 1, notesRow + 2, 6].Merge = true;
-            sheet.Cells[notesRow + 3, 1].Value = $"Last updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
-            sheet.Cells[notesRow + 3, 1, notesRow + 3, 4].Merge = true;
-
-            // Save the package
             await package.SaveAsync();
         }
         catch (Exception ex)

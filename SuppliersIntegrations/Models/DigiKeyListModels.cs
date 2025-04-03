@@ -1,5 +1,4 @@
-﻿// Create new file: Models/DigiKeyListModels.cs
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace BOMVIEW.Models
 {
